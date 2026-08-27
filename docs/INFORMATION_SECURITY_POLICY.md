@@ -133,9 +133,10 @@ The following are commitments:
     Outputs to train and improve Anthropic AI models, unless you opt out through your account
     settings."
 
-  `[DECIDE: confirm which plan this account uses. If it is a consumer subscription, opt out in
-  the account privacy settings, then state that here. Until that is done, submitted source code
-  may be used for training.]`
+  This account is a consumer Claude subscription. The "Help improve our AI models" setting,
+  which governs whether chats and coding sessions are used for training, was **disabled on
+  28 August 2026**. Submitted source code and documentation are therefore not used to train
+  Anthropic's models.
 
 ## 9. Incidents
 
