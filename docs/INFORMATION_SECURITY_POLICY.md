@@ -123,7 +123,19 @@ The following are commitments:
 - Before a service is used for client work, its security posture and data location are checked.
 - Any person or company given access to client data signs a confidentiality agreement first.
 - Clients are told in advance of a change to the list of services processing their data.
-- **AI and LLM services.** Anthropic's Claude is used as a development assistant for writing and reviewing code, configuration and documentation. Source code and technical documentation are shared with it. No client personal data, production data, or credentials are sent to it, and it is not embedded in any delivered application unless separately agreed in writing with the client. `[CONFIRM: check the provider's current terms on whether submitted content is used for model training, and state what they say.]`
+- **AI and LLM services.** Anthropic's Claude is used as a development assistant for writing and reviewing code, configuration and documentation. Source code and technical documentation are shared with it. No client personal data, production data, or credentials are sent to it, and it is not embedded in any delivered application unless separately agreed in writing with the client. 
+
+  **Model training.** Anthropic's position differs by plan, and the distinction matters here:
+
+  - *Commercial and API terms* (effective 17 Jun 2025): "Anthropic may not train models on
+    Customer Content from Services."
+  - *Consumer subscriptions* (privacy policy effective 8 Jul 2026): "We may use your Inputs and
+    Outputs to train and improve Anthropic AI models, unless you opt out through your account
+    settings."
+
+  `[DECIDE: confirm which plan this account uses. If it is a consumer subscription, opt out in
+  the account privacy settings, then state that here. Until that is done, submitted source code
+  may be used for training.]`
 
 ## 9. Incidents
 
