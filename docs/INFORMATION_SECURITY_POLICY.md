@@ -89,10 +89,15 @@ named owner above unless stated otherwise.
 | System | Purpose | Data stored | Region |
 |---|---|---|---|
 | Amazon Web Services (ap-south-1, Mumbai) | Application hosting, database, backups | Lead form submissions, prospect personal data | India |
-| Google Workspace / Gmail | Client correspondence | Client contact details | `[CONFIRM: Google does not guarantee a fixed region on a personal account]` |
+| Google (Gmail, personal account) | Client correspondence | Client contact details only. No prospect personal data, credentials, or production data is sent by email. | Global — Google does not offer data residency on personal accounts |
 | Client-operated CRM | Lead management | Prospect data is written to the client's own CRM; no copy is retained by this organisation | Client-controlled |
 | GitHub | Source code and documentation | No client personal data | United States |
 | Anthropic (Claude) | Development assistance | Source code and technical documentation only. No client personal data, credentials, or production data is sent. | United States |
+
+**Data residency.** Application and prospect personal data resides in AWS ap-south-1 (Mumbai)
+and does not leave India. Business correspondence is handled through a personal Google account,
+for which Google offers no residency guarantee; correspondence is limited to client contact
+details and never carries prospect data, credentials, or production data.
 
 This table is also the subprocessor list clients will ask for. Keep it current.
 
