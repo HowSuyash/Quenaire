@@ -1,10 +1,10 @@
 # Information Security Policy
 
-**Organisation:** Suyash Shukla, sole proprietor `[CONFIRM: if you have a registered company, use its full legal name and registration number instead]`
+**Organisation:** Suyash Shukla, sole proprietor
 **Owner:** Suyash Shukla, Founder & Principal Developer
 **Version:** 1.0
-**Effective:** `[DECIDE: the date you sign — do not backdate]`
-**Next review:** `[Effective date + 12 months]`
+**Effective:** 28 August 2026
+**Next review:** 28 August 2027
 
 ---
 
