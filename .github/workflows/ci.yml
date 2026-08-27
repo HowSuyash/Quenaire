@@ -1,0 +1,285 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly security scan
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: complyai_test
+          POSTGRES_USER: complyai
+          POSTGRES_PASSWORD: complyai
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U complyai -d complyai_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: [6379:6379]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      kafka:
+        image: confluentinc/cp-kafka:7.6.0
+        env:
+          KAFKA_BROKER_ID: 1
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+          KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+        ports: [9092:9092]
+        options: >-
+          --health-cmd "/etc/confluent/docker/healthcheck"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 5
+      zookeeper:
+        image: confluentinc/cp-zookeeper:7.6.0
+        env:
+          ZOOKEEPER_CLIENT_PORT: 2181
+        options: >-
+          --health-cmd "nc -z localhost 2181"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # Reported, not enforced. Every file currently lacks the configured header,
+      # and that header is Apache 2.0 while the README declares the project
+      # proprietary -- resolve that before making this a gate.
+      - name: Check formatting (informational)
+        run: ./gradlew spotlessCheck --no-daemon
+        continue-on-error: true
+
+      - name: Run Unit Tests
+        run: ./gradlew test --no-daemon
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          DATABASE_URL: jdbc:postgresql://localhost:5432/complyai_test
+          DATABASE_USER: complyai
+          DATABASE_PASSWORD: complyai
+
+      - name: Run Integration Tests
+        run: ./gradlew integrationTest --no-daemon
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          DATABASE_URL: jdbc:postgresql://localhost:5432/complyai_test
+          DATABASE_USER: complyai
+          DATABASE_PASSWORD: complyai
+
+      - name: Generate Test Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results
+          path: build/test-results/**/*.xml
+          reporter: java-junit
+
+      - name: Generate Coverage Report
+        run: ./gradlew jacocoTestReport --no-daemon
+        continue-on-error: true
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./build/reports/jacoco/test/jacocoTestReport.xml
+          fail_ci_if_error: false
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
+      - name: Type-check application
+        run: npx tsc --noEmit
+
+      - name: Type-check tests
+        run: npx tsc -p tsconfig.test.json --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Run OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        id: depcheck
+        with:
+          project: 'ComplyAI'
+          path: '.'
+          format: 'HTML'
+          out: 'reports'
+          args: >
+            --failOnCVSS 7
+            --suppression suppression.xml
+            --enableExperimental
+            --enableRetired
+
+      - name: Upload Dependency Check Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dependency Check Report
+          path: reports/
+
+      - name: Run SpotBugs
+        run: ./gradlew spotbugsMain --no-daemon
+
+      - name: Upload SpotBugs Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SpotBugs Report
+          path: build/reports/spotbugs/
+
+  build:
+    name: Build Docker Image
+    needs: [test, frontend, security-scan]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'release'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tags }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+      - name: Deploy to Staging
+        run: |
+          echo "Deploying to staging environment..."
+          # Add your staging deployment commands here
+          # e.g., kubectl apply -f k8s/staging/
+
+  deploy-production:
+    name: Deploy to Production
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    environment: production
+    steps:
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to production environment..."
+          # Add your production deployment commands here
+          # e.g., kubectl apply -f k8s/production/

@@ -1,0 +1,99 @@
+# Build
+/build
+/out
+/*.jar
+/*.war
+/*.ear
+
+# Gradle
+.gradle
+gradle-app.setting
+!gradle-wrapper.jar
+.gradle.kts.kotlin-dsl-cache
+
+# IDE
+.idea
+*.iml
+*.ipr
+*.iws
+.vscode
+.classpath
+.project
+.settings
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test reports
+build/reports/tests/
+build/reports/jacoco/
+
+# Coverage
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Docker
+docker-compose.override.yml
+
+# Database
+*.db
+*.sqlite
+
+# Keys and secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+keystore
+truststore
+
+# Local development
+/local
+/tmp
+*.tmp
+*.temp
+
+# IDEA
+*.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IntelliJ
+*.iml
+*.iws
+*.ipr
+
+# The Gradle wrapper jar IS committed on purpose: without it a fresh clone
+# cannot run ./gradlew, which breaks CI and onboarding.
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Spotless
+spotless.*
+
+# Release
+.release
+
+# Node (frontend/.gitignore covers the rest)
+node_modules/
+.next/
+out/
+
+# Eclipse build output
+/bin/
+
+# Scratch
+*.bak
+*.orig

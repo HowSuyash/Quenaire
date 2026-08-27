@@ -1,0 +1,85 @@
+# Backend against the local Docker stack (docker-compose.minimal.yml).
+#
+#   SPRING_PROFILES_ACTIVE=docker ./gradlew bootRun
+#
+# This is the profile that exercises the real pipeline: pgvector for retrieval
+# and a local model for embeddings and generation. The `local` profile runs on
+# H2, where vector search cannot work at all.
+spring:
+  datasource:
+    # Postgres native enum columns (tenant_plan, answer_status, ...) reject a
+    # varchar parameter, which is what @Enumerated(EnumType.STRING) binds:
+    #   ERROR: column "plan" is of type tenant_plan but expression is of type
+    #   character varying
+    # stringtype=unspecified lets the server infer the type from the target
+    # column. It also covers the same problem on jsonb columns.
+    url: jdbc:postgresql://localhost:5432/complyai?stringtype=unspecified
+    username: complyai
+    password: complyai
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # Flyway owns the schema; Hibernate only checks the mapping agrees with it.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # Nothing in the minimal stack provides these, and the app must not block on
+  # them while proving the questionnaire pipeline.
+  data:
+    redis:
+      repositories:
+        enabled: false
+  cache:
+    type: simple
+  kafka:
+    listener:
+      auto-startup: false
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+
+management:
+  health:
+    redis:
+      enabled: false
+    mail:
+      enabled: false
+
+app:
+  ollama:
+    base-url: http://localhost:11434
+    # A 3B model on CPU. The 8B in the README needs roughly 6GB resident, which
+    # does not fit alongside Postgres on a 16GB machine.
+    model: llama3.2:3b
+    embedding-model: nomic-embed-text
+    # CPU generation is slow; the default client timeout aborts healthy requests.
+    timeout-seconds: 300
+    max-tokens: 1024
+
+  rag:
+    chunk-size: 1000
+    chunk-overlap: 200
+    top-k: 8
+    similarity-threshold: 0.5
+
+logging:
+  level:
+    com.complyai.ai: DEBUG
+    org.flywaydb: INFO
+    # Retrieval and generation timings — the numbers that set the pricing floor.
+    com.complyai.ai.llm: DEBUG

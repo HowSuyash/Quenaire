@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude test classes -->
+    <Match>
+        <Class name="~.*Test.*" />
+    </Match>
+    <Match>
+        <Class name="~.*Test" />
+    </Match>
+    <Match>
+        <Package name="~.*\.test\..*" />
+    </Match>
+
+    <!-- Exclude generated classes -->
+    <Match>
+        <Class name="~.*\$.*" />
+    </Match>
+
+    <!-- Exclude DTOs and records (no logic) -->
+    <Match>
+        <Class name="~.*Controller\$.*" />
+    </Match>
+
+    <!-- Exclude known false positives -->
+    <Match>
+        <Bug code="EI_EXPOSE_REP" />
+    </Match>
+    <Match>
+        <Bug code="EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Bug code="MS_MUTABLE_ARRAY" />
+    </Match>
+    <Match>
+        <Bug code="MS_MUTABLE_HASHTABLE" />
+    </Match>
+</FindBugsFilter>

@@ -1,0 +1,52 @@
+# The smallest stack that can run the questionnaire pipeline end to end.
+#
+# The full compose file also starts Kafka, Zookeeper, Keycloak, MinIO and
+# Mailhog. None of those are needed to prove that a questionnaire can be parsed,
+# embedded, retrieved against and answered -- and on a 16GB machine they compete
+# for the memory the language model needs.
+#
+#   docker compose -f docker-compose.minimal.yml up -d
+#
+# Auth is bypassed in this configuration, so run the backend on the `local`
+# profile against it, not in production.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: complyai-postgres
+    environment:
+      POSTGRES_DB: complyai
+      POSTGRES_USER: complyai
+      POSTGRES_PASSWORD: complyai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U complyai -d complyai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: complyai-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+      OLLAMA_MODELS: /root/.ollama/models
+      # Unload the model after five minutes idle so it is not holding several
+      # gigabytes while nobody is asking it anything.
+      OLLAMA_KEEP_ALIVE: 5m
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  postgres_data:
+  ollama_data:

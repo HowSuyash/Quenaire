@@ -1,0 +1,166 @@
+spring:
+  application:
+    name: complyai
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    # Postgres native enum columns (tenant_plan, answer_status, ...) reject a
+    # varchar parameter, which is what @Enumerated(EnumType.STRING) binds:
+    #   ERROR: column "plan" is of type tenant_plan but expression is of type
+    #   character varying
+    # stringtype=unspecified lets the server infer the type from the target
+    # column. It also covers the same problem on jsonb columns.
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/complyai?stringtype=unspecified}
+    username: ${DATABASE_USER:complyai}
+    password: ${DATABASE_PASSWORD:complyai}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        default_batch_fetch_size: 20
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    baseline-version: 0
+    baseline-description: Initial schema
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 5
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: complyai
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  # No context-path: every @RequestMapping already carries its own /api prefix.
+  # Setting one here produced /api/api/... and 404'd every documented endpoint.
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  forward-headers-strategy: native
+
+management:
+  endpoints:
+    web:
+      base-path: /api/actuator
+      exposure:
+        include: health,info,metrics,prometheus,loggers
+    health:
+      show-details: always
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    com.complyai: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+app:
+  # Origin the Next.js frontend is served from. The backend renders only the
+  # marketing landing page; every product route lives on this origin.
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  jwt:
+    issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/complyai}
+    jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8081/realms/complyai/protocol/openid-connect/certs}
+  keycloak:
+    admin-url: ${KEYCLOAK_ADMIN_URL:http://localhost:8081}
+    admin-realm: ${KEYCLOAK_ADMIN_REALM:master}
+    admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:complyai-admin}
+    admin-client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
+    realm: ${KEYCLOAK_REALM:complyai}
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    model: ${OLLAMA_MODEL:llama3.1:8b}
+    embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+    timeout: 120s
+  storage:
+    type: ${STORAGE_TYPE:local} # local, s3, minio
+    local:
+      path: ${STORAGE_LOCAL_PATH:./storage}
+    s3:
+      bucket: ${STORAGE_S3_BUCKET:}
+      region: ${STORAGE_S3_REGION:us-east-1}
+      access-key: ${STORAGE_S3_ACCESS_KEY:}
+      secret-key: ${STORAGE_S3_SECRET_KEY:}
+  document:
+    max-file-size: 52428800 # 50MB
+    allowed-mime-types:
+      - application/pdf
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      - text/plain
+      - text/csv
+  rag:
+    chunk-size: 1000
+    chunk-overlap: 200
+    top-k: 10
+    similarity-threshold: 0.75
+  questionnaire:
+    max-questions-per-import: 5000
+    supported-formats:
+      - xlsx
+      - xls
+      - csv
+      - pdf
+
+springdoc:
+  api-docs:
+    path: /api/v3/api-docs
+  swagger-ui:
+    path: /api/swagger-ui.html

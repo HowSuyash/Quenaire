@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Local (H2) mapping overrides.
+
+  The embedding columns are declared as `vector(768)` for pgvector. H2 has no
+  such type and cannot be taught one: a `CREATE DOMAIN VECTOR` alias parses, but
+  H2 domains cannot take the `(768)` length argument, so the generated DDL fails
+  either way.
+
+  This file overrides ONLY the column definition, and only for the local profile
+  (see `spring.jpa.mapping-resources` in application-local.yml). Production is
+  untouched — there, Flyway owns the real `vector(768)` columns.
+
+  Consequence: similarity search does not work on H2. The queries that use it are
+  native and rely on pgvector's `<=>` operator, so they will fail if invoked.
+  Local H2 is for wiring up and exercising the non-RAG surface; run the
+  docker-compose Postgres for anything touching retrieval.
+-->
+<entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence/orm
+                                     https://jakarta.ee/xml/ns/persistence/orm/orm_3_0.xsd"
+                 version="3.0">
+
+    <entity class="com.complyai.domain.document.Document">
+        <attributes>
+            <basic name="embedding">
+                <column name="embedding" column-definition="VARBINARY"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="com.complyai.domain.document.DocumentChunk">
+        <attributes>
+            <basic name="embedding">
+                <column name="embedding" column-definition="VARBINARY"/>
+            </basic>
+        </attributes>
+    </entity>
+
+</entity-mappings>

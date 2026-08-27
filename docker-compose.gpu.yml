@@ -1,0 +1,16 @@
+# GPU acceleration for Ollama (NVIDIA only).
+#
+# Requires an NVIDIA GPU plus the NVIDIA Container Toolkit. Without both, the
+# container fails to start -- which is why this lives in an override rather than
+# the base file.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

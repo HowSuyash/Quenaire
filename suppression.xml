@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions>
+    <!-- Suppress known false positives or acceptable risks -->
+    <suppress>
+        <notes>False positive - used for testing only</notes>
+        <packageUrl regex="true">pkg:maven/com.h2database/h2@.*</packageUrl>
+        <cpe>cpe:2.3:a:h2database:h2:*:*:*:*:*:*:*:*</cpe>
+    </suppress>
+    <suppress>
+        <notes>Test dependency only</notes>
+        <packageUrl regex="true">pkg:maven/org.testcontainers/.*</packageUrl>
+    </suppress>
+</suppressions>
