@@ -1,9 +1,9 @@
 # Information Security Policy
 
-**Organisation:** `[DECIDE: full legal entity name]`
-**Owner:** `[DECIDE: your name]`, `[DECIDE: your title]`
+**Organisation:** Suyash Shukla, sole proprietor `[CONFIRM: if you have a registered company, use its full legal name and registration number instead]`
+**Owner:** Suyash Shukla, Founder & Principal Developer
 **Version:** 1.0
-**Effective:** `[DECIDE: date you sign this]`
+**Effective:** `[DECIDE: the date you sign — do not backdate]`
 **Next review:** `[Effective date + 12 months]`
 
 ---
@@ -31,8 +31,7 @@ Delete this section before issuing.
 
 ## 1. Purpose and scope
 
-This policy sets out how `[entity name]` protects the information it holds — its own, and
-that of its clients.
+This policy sets out how Suyash Shukla, sole proprietor, protects the information held — both its own and that of clients.
 
 It applies to everyone who works on client projects, including contractors, and to every
 device and service used to do that work.
@@ -41,7 +40,7 @@ The organisation is a single practitioner. Where this policy refers to staff or 
 
 ## 2. Responsibility
 
-`[Your name]`, `[your title]`, is accountable for information security. This includes
+Suyash Shukla, Founder & Principal Developer, is accountable for information security. This includes
 approving this policy, deciding on exceptions, and acting as the contact point for client
 security queries and for incidents.
 
@@ -73,8 +72,7 @@ named owner above unless stated otherwise.
 
 - Client systems are accessed over a trusted network or a VPN. Public or untrusted Wi-Fi is not
   used for administrative access without a VPN.
-- The VPN in use is `[DECIDE: which one, or state that work is performed only on home/office
-  networks]`.
+- No VPN is currently in use. Work is performed only on the practitioner's own home network, which uses WPA2 or better. Client systems are not accessed from public Wi-Fi.
 
 ## 6. Client data
 
@@ -90,10 +88,11 @@ named owner above unless stated otherwise.
 
 | System | Purpose | Data stored | Region |
 |---|---|---|---|
-| `[DECIDE: hosting provider]` | Application hosting | `[e.g. lead form submissions]` | `[region]` |
-| `[DECIDE: email provider]` | Correspondence | Client contact details | `[region]` |
-| `[DECIDE: CRM]` | Lead management | Prospect personal data | `[region]` |
-| `[add every service that touches client data]` | | | |
+| Amazon Web Services (ap-south-1, Mumbai) | Application hosting, database, backups | Lead form submissions, prospect personal data | India |
+| Google Workspace / Gmail | Client correspondence | Client contact details | `[CONFIRM: Google does not guarantee a fixed region on a personal account]` |
+| Client-operated CRM | Lead management | Prospect data is written to the client's own CRM; no copy is retained by this organisation | Client-controlled |
+| GitHub | Source code and documentation | No client personal data | United States |
+| Anthropic (Claude) | Development assistance | Source code and technical documentation only. No client personal data, credentials, or production data is sent. | United States |
 
 This table is also the subprocessor list clients will ask for. Keep it current.
 
@@ -119,9 +118,7 @@ The following are commitments:
 - Before a service is used for client work, its security posture and data location are checked.
 - Any person or company given access to client data signs a confidentiality agreement first.
 - Clients are told in advance of a change to the list of services processing their data.
-- `[DECIDE: state whether any AI or LLM services are used in delivering work, name them, and
-  state whether client data is sent to them. This is asked directly on most client
-  questionnaires — answer it here once.]`
+- **AI and LLM services.** Anthropic's Claude is used as a development assistant for writing and reviewing code, configuration and documentation. Source code and technical documentation are shared with it. No client personal data, production data, or credentials are sent to it, and it is not embedded in any delivered application unless separately agreed in writing with the client. `[CONFIRM: check the provider's current terms on whether submitted content is used for model training, and state what they say.]`
 
 ## 9. Incidents
 
@@ -138,23 +135,20 @@ On becoming aware of one:
    question, take advice.]`
 5. After resolution, write a short account of the cause and what changed as a result.
 
-Incident contact: `[your name]`, `[phone]`, `[email]`. Reachable outside business hours.
+Incident contact: Suyash Shukla, +91 63928 52762, suyashshukla0702@gmail.com. Reachable outside business hours.
 
 ## 10. Continuity
 
-- Source code, documentation and configuration are held in version control, hosted at
-  `[DECIDE: where]`.
-- Backups of `[DECIDE: what — e.g. databases, uploaded files]` are taken `[DECIDE: how often]`
-  and stored `[DECIDE: where]`.
-- A restore is tested at least annually. Last tested: `[DECIDE: date, or write "not yet tested" — an untested backup is not a backup]`.
+- Source code, documentation and configuration are held in Git version control, hosted at `[DECIDE: GitHub / GitLab — name it once you push, and grant the client access to their own project repository]`.
+- Application databases and uploaded files are backed up daily by the hosting provider's managed backup service, retained for 7 days, and stored in the same region as the primary data. Source code is additionally held in the remote Git repository.
+- A restore is tested at least annually. Last tested: not yet tested — a restore test will be performed before the application is handed over to the client.
 - **Key person risk.** The organisation is a single practitioner, so unavailability is the
   most significant continuity risk. It is limited by:
-  `[DECIDE: tick the ones you will actually do —]`
   - clients holding their own hosting, domain and CRM accounts, with access granted to
     the practitioner rather than owned by them;
   - all source code, configuration and documentation held in the client-accessible
     repository, so another developer can continue the work;
-  - `[DECIDE: a named emergency contact who can recover credentials from Bitwarden — name them, or state that no such arrangement exists]`.
+  - no emergency contact is currently nominated for credential recovery. This is a known gap for a single practitioner; clients holding their own accounts is the compensating control.
 
 ## 11. Acceptable use
 
