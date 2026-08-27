@@ -139,7 +139,7 @@ Incident contact: Suyash Shukla, +91 63928 52762, suyashshukla0702@gmail.com. Re
 
 ## 10. Continuity
 
-- Source code, documentation and configuration are held in Git version control, hosted at `[DECIDE: GitHub / GitLab — name it once you push, and grant the client access to their own project repository]`.
+- Source code, documentation and configuration are held in Git version control, hosted in a **private** GitHub repository. Client project work is kept in a repository separate from internal product code, and the client is granted access to their own.
 - Application databases and uploaded files are backed up daily by the hosting provider's managed backup service, retained for 7 days, and stored in the same region as the primary data. Source code is additionally held in the remote Git repository.
 - A restore is tested at least annually. Last tested: not yet tested — a restore test will be performed before the application is handed over to the client.
 - **Key person risk.** The organisation is a single practitioner, so unavailability is the
