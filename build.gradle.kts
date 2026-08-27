@@ -3,6 +3,10 @@ plugins {
     id("java")
     id("org.flywaydb.flyway") version "10.14.0"
     id("com.diffplug.spotless") version "6.25.0"
+    // Static analysis. CI already invoked spotbugsMain and spotbugs-exclude.xml
+    // was already written, but the plugin was never applied, so the task did not
+    // exist and the step failed.
+    id("com.github.spotbugs") version "6.0.19"
 }
 
 group = "com.complyai"
@@ -166,4 +170,23 @@ tasks.register<Test>("integrationTest") {
     }
 
     shouldRunAfter(tasks.named("test"))
+}
+
+spotbugs {
+    toolVersion.set("4.8.6")
+    excludeFilter.set(file("$rootDir/spotbugs-exclude.xml"))
+    // Report findings without breaking the build. Tighten this to `true` once
+    // the existing findings are triaged, otherwise every build is red and the
+    // signal gets ignored.
+    ignoreFailures.set(true)
+    // Deep analysis is slow; "default" keeps CI usable.
+    effort.set(com.github.spotbugs.snom.Effort.DEFAULT)
+    reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
+}
+
+tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+    reports.create("html") {
+        required.set(true)
+        outputLocation.set(file("$buildDir/reports/spotbugs/${name}.html"))
+    }
 }
