@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -74,12 +75,25 @@ public class VantaQuestionnaireController {
     }
   }
 
+  /**
+   * The tenant's questionnaires.
+   *
+   * <p>This returned an empty list unconditionally, so the listing screen was blank however many
+   * questionnaires had been uploaded -- a 200 that looked like "you have none".
+   */
   @GetMapping
-  public ResponseEntity<List<VantaQuestionnaire>> listQuestionnaires(
+  public ResponseEntity<Map<String, Object>> listQuestionnaires(
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
 
-    // TODO: Implement pagination
-    return ResponseEntity.ok(List.of());
+    Page<VantaQuestionnaire> result = questionnaireService.listQuestionnaires(page, size);
+
+    return ResponseEntity.ok(
+        Map.of(
+            "items", result.getContent(),
+            "page", result.getNumber(),
+            "size", result.getSize(),
+            "totalElements", result.getTotalElements(),
+            "totalPages", result.getTotalPages()));
   }
 
   @GetMapping("/{id}")
@@ -94,10 +108,25 @@ public class VantaQuestionnaireController {
   public ResponseEntity<Map<String, Object>> processQuestionnaire(
       @PathVariable UUID id, @RequestBody(required = false) Map<String, Object> request) {
 
-    List<UUID> documentIds = (List<UUID>) request.getOrDefault("documentIds", List.of());
-    // TODO: Fetch documents
+    // The selected documents were parsed out of the request and then thrown away: every
+    // questionnaire was answered against the whole corpus regardless of what the customer
+    // chose. Choosing "answer from the SOC 2 report only" did nothing.
+    List<UUID> documentIds;
+    try {
+      documentIds =
+          request == null
+              ? List.of()
+              : ((List<?>) request.getOrDefault("documentIds", List.of()))
+                  .stream().map(value -> UUID.fromString(String.valueOf(value))).toList();
+    } catch (IllegalArgumentException | ClassCastException e) {
+      // There is no @ControllerAdvice in this application, so an unhandled parse failure
+      // here would surface as a 500 -- a server fault for what is a malformed request.
+      return ResponseEntity.badRequest()
+          .body(Map.of("success", false, "error", "documentIds must be a list of UUIDs"));
+    }
 
-    VantaQuestionnaire processed = questionnaireService.processQuestionnaire(id, List.of());
+    VantaQuestionnaire processed =
+        questionnaireService.processQuestionnaireWithDocumentIds(id, documentIds);
 
     return ResponseEntity.ok(
         Map.of(

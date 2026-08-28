@@ -14,6 +14,7 @@
 package com.complyai.domain.document;
 
 import com.pgvector.PGvector;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,6 +48,15 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
   long countByTenantIdAndStatusAndDeletedAtIsNull(UUID tenantId, DocumentStatus status);
 
   List<Document> findByTenantId(UUID tenantId);
+
+  /**
+   * Documents named by the caller, restricted to their tenant.
+   *
+   * <p>The ids come from a request body. {@code findAllById} would return whatever those ids point
+   * at, including another tenant's documents -- so a customer could ground their answers in someone
+   * else's security documentation, and cite it.
+   */
+  List<Document> findByTenantIdAndIdInAndDeletedAtIsNull(UUID tenantId, Collection<UUID> ids);
 
   Optional<Document> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
 

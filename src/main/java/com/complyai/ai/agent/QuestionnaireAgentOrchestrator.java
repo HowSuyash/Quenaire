@@ -117,7 +117,10 @@ public class QuestionnaireAgentOrchestrator {
     log.info("Stage 1: Parsing questionnaire {}", questionnaireId);
 
     VantaQuestionnaire questionnaire =
-        questionnaireRepository.findById(questionnaireId).orElseThrow();
+        questionnaireRepository
+            .findByIdAndTenantIdAndDeletedAtIsNull(
+                questionnaireId, TenantContext.requireCurrentTenant().getId())
+            .orElseThrow();
 
     try {
       // Parse the spreadsheet if we have original file bytes
@@ -193,7 +196,10 @@ public class QuestionnaireAgentOrchestrator {
 
       // Update questionnaire status
       VantaQuestionnaire questionnaire =
-          questionnaireRepository.findById(questionnaireId).orElseThrow();
+          questionnaireRepository
+              .findByIdAndTenantIdAndDeletedAtIsNull(
+                  questionnaireId, TenantContext.requireCurrentTenant().getId())
+              .orElseThrow();
       questionnaire.setStatus(
           com.complyai.domain.questionnaire.vanta.VantaQuestionnaire.QuestionnaireStatus
               .READY_FOR_REVIEW);

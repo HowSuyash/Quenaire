@@ -268,15 +268,24 @@ public class AgentTaskQueue {
     return saved;
   }
 
-  /** Get task execution status */
+  /**
+   * Status of one of the caller's tasks.
+   *
+   * <p>Scoped to the tenant even though nothing calls this yet: the scoped finder exists, the
+   * unscoped one would return any tenant's task, and the difference stops mattering the moment
+   * someone puts a controller in front of it.
+   */
   public Optional<AgentTask> getTaskStatus(UUID taskId) {
-    return taskRepository.findById(taskId);
+    return taskRepository.findByIdAndTenantIdAndDeletedAtIsNull(
+        taskId, TenantContext.requireCurrentTenant().getId());
   }
 
-  /** Cancel a pending task */
+  /** Cancel a pending task belonging to the caller's tenant. */
   @Transactional
   public boolean cancelTask(UUID taskId) {
-    Optional<AgentTask> taskOpt = taskRepository.findById(taskId);
+    Optional<AgentTask> taskOpt =
+        taskRepository.findByIdAndTenantIdAndDeletedAtIsNull(
+            taskId, TenantContext.requireCurrentTenant().getId());
     if (taskOpt.isEmpty()) return false;
 
     AgentTask task = taskOpt.get();

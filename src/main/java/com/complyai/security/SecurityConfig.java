@@ -13,7 +13,10 @@
  */
 package com.complyai.security;
 
+import java.util.Arrays;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,6 +34,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
 public class SecurityConfig {
+
+  private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final TenantContextFilter tenantContextFilter;
@@ -113,13 +118,50 @@ public class SecurityConfig {
     return http.build();
   }
 
+  /**
+   * Which other origins may call this API with the user's credentials.
+   *
+   * <p>The default is none. In the deployed shape the browser never talks to this API directly --
+   * it is served from the same origin as the frontend, which proxies to it -- so no cross-origin
+   * request needs to be permitted at all, and a request that is cross-origin is one worth refusing.
+   *
+   * <p>This defaulted to {@code "*"} with {@code allowCredentials(true)}, which is the combination
+   * that lets any page on the internet call the API using a signed-in user's session and read the
+   * reply. For a product holding customers' security documentation that is not a default worth
+   * having for convenience.
+   *
+   * <p>Set {@code CORS_ALLOWED_ORIGINS} to a comma-separated list when a browser on a different
+   * origin genuinely must reach the API -- a `next dev` server on :3000 during development, for
+   * instance.
+   */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
+
+    String configured = System.getenv().getOrDefault("CORS_ALLOWED_ORIGINS", "").trim();
+    List<String> origins =
+        configured.isEmpty()
+            ? List.of()
+            : Arrays.stream(configured.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+
+    if (origins.isEmpty()) {
+      log.info("CORS: no cross-origin callers permitted (set CORS_ALLOWED_ORIGINS to change)");
+    } else if (origins.contains("*")) {
+      // Refusing outright would take down a deployment that is relying on it; saying so
+      // clearly is the next best thing.
+      log.warn(
+          "CORS_ALLOWED_ORIGINS is \"*\" while credentials are allowed: any site can call this"
+              + " API with a signed-in user's session. Name the origins instead.");
+    } else {
+      log.info("CORS: permitting {}", origins);
+    }
+
     // Patterns, not setAllowedOrigins: Spring rejects the literal "*" origin
     // whenever allowCredentials is true, which failed every browser request.
-    configuration.setAllowedOriginPatterns(
-        List.of(System.getenv().getOrDefault("CORS_ALLOWED_ORIGINS", "*").split(",")));
+    configuration.setAllowedOriginPatterns(origins);
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("*"));
     configuration.setExposedHeaders(List.of("X-Total-Count", "X-Page-Count"));

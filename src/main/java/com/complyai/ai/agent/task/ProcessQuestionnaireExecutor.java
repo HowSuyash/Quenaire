@@ -56,7 +56,10 @@ public class ProcessQuestionnaireExecutor implements AgentTaskExecutor {
       }
 
       Optional<com.complyai.domain.questionnaire.vanta.VantaQuestionnaire> questionnaireOpt =
-          questionnaireRepository.findById(task.getQuestionnaireId());
+          // Scoped by the task's own tenant rather than the thread-local one: this runs
+          // on a queue worker, where no request has set a tenant context.
+          questionnaireRepository.findByIdAndTenantIdAndDeletedAtIsNull(
+              task.getQuestionnaireId(), task.getTenant().getId());
 
       if (questionnaireOpt.isEmpty()) {
         return new AgentTaskExecutionResult(false, null, "Questionnaire not found");

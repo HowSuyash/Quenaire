@@ -221,7 +221,12 @@ public class VantaReviewService {
   public List<QuestionVersionHistory> getVersionHistory(UUID questionId) {
     // In production, this would query a version history table
     // For now, return from metadata
-    VantaQuestion question = questionRepository.findById(questionId).orElse(null);
+    // Scoped: the id comes from a URL, and findById is not restricted to anything.
+    VantaQuestion question =
+        questionRepository
+            .findByIdAndTenantIdAndDeletedAtIsNull(
+                questionId, TenantContext.requireCurrentTenant().getId())
+            .orElse(null);
     if (question == null) return new ArrayList<>();
 
     String historyJson = question.getMetadataJson();
@@ -260,7 +265,10 @@ public class VantaReviewService {
   @Transactional
   public void updateQuestionnaireStats(UUID questionnaireId) {
     VantaQuestionnaire questionnaire =
-        questionnaireRepository.findById(questionnaireId).orElse(null);
+        questionnaireRepository
+            .findByIdAndTenantIdAndDeletedAtIsNull(
+                questionnaireId, TenantContext.requireCurrentTenant().getId())
+            .orElse(null);
     if (questionnaire == null) return;
 
     List<VantaQuestion> questions =

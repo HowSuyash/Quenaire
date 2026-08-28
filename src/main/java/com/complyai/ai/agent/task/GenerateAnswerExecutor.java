@@ -118,7 +118,10 @@ public class GenerateAnswerExecutor implements AgentTaskExecutor {
 
       // Update questionnaire stats
       com.complyai.domain.questionnaire.vanta.VantaQuestionnaire questionnaire =
-          questionnaireRepository.findById(task.getQuestionnaireId()).orElseThrow();
+          questionnaireRepository
+              .findByIdAndTenantIdAndDeletedAtIsNull(
+                  task.getQuestionnaireId(), task.getTenant().getId())
+              .orElseThrow();
 
       questionnaire.setStatus(
           com.complyai.domain.questionnaire.vanta.VantaQuestionnaire.QuestionnaireStatus

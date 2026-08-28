@@ -152,11 +152,16 @@ CMD ["npm", "start"]
 Copy `.env.example` to `.env.local` and configure:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8080
+BACKEND_URL=http://localhost:8080
 NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8081
 NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=complyai-frontend
 NEXT_PUBLIC_KEYCLOAK_REALM=complyai
 ```
+
+The browser talks only to this app's own origin. Requests to `/api` that this
+app does not serve itself are forwarded to `BACKEND_URL` by the Next server, so
+nothing is cross-origin and the backend allows no cross-origin callers by
+default.
 
 ## Contributing
 

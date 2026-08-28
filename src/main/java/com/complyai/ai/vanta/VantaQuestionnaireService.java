@@ -19,9 +19,13 @@ import com.complyai.domain.questionnaire.vanta.*;
 import com.complyai.security.TenantContext;
 import java.io.IOException;
 import java.util.*;
+import java.util.Collection;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,6 +34,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class VantaQuestionnaireService {
 
   private static final Logger log = LoggerFactory.getLogger(VantaQuestionnaireService.class);
+
+  /** Upper bound on a page the client can ask for. */
+  private static final int MAX_PAGE_SIZE = 100;
 
   private final VantaSpreadsheetParserService parserService;
   private final VantaQuestionnaireRepository questionnaireRepository;
@@ -123,14 +130,72 @@ public class VantaQuestionnaireService {
     return questionnaire;
   }
 
+  /**
+   * A questionnaire belonging to the caller's tenant.
+   *
+   * <p>Every one of these lookups used {@code findById}, which is not scoped to anything. There is
+   * no Hibernate tenant filter in this application -- isolation is only ever whatever the query
+   * says -- so an id from one customer's URL fetched another customer's questionnaire, and the
+   * export path handed back the original uploaded file with it. The scoped finder already existed;
+   * it was simply not the one being called.
+   *
+   * <p>A questionnaire belonging to someone else is reported as missing rather than forbidden, so
+   * the caller learns nothing about whether the id exists.
+   */
+  private VantaQuestionnaire requireOwned(UUID questionnaireId) {
+    return questionnaireRepository
+        .findByIdAndTenantIdAndDeletedAtIsNull(
+            questionnaireId, TenantContext.requireCurrentTenant().getId())
+        .orElseThrow(() -> new IllegalArgumentException("Questionnaire not found"));
+  }
+
+  /**
+   * The tenant's questionnaires, newest first.
+   *
+   * <p>The controller returned an empty list with a TODO where this call belongs, so the product's
+   * main listing screen showed nothing however many questionnaires had been uploaded.
+   */
+  @Transactional(readOnly = true)
+  public Page<VantaQuestionnaire> listQuestionnaires(int page, int size) {
+    // A caller asking for ten thousand rows should not be able to ask the database for them.
+    int bounded = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+    return questionnaireRepository.findByTenantIdAndDeletedAtIsNull(
+        TenantContext.requireCurrentTenant().getId(),
+        PageRequest.of(Math.max(page, 0), bounded, Sort.by(Sort.Direction.DESC, "createdAt")));
+  }
+
+  /**
+   * Resolves document ids from a request and processes against them.
+   *
+   * <p>An id naming another tenant's document is dropped rather than refused: the caller learns
+   * nothing about whether it exists.
+   */
+  @Transactional
+  public VantaQuestionnaire processQuestionnaireWithDocumentIds(
+      UUID questionnaireId, Collection<UUID> documentIds) {
+    List<Document> documents =
+        documentIds == null || documentIds.isEmpty()
+            ? List.of()
+            : documentRepository.findByTenantIdAndIdInAndDeletedAtIsNull(
+                TenantContext.requireCurrentTenant().getId(), documentIds);
+
+    if (documentIds != null && documents.size() != documentIds.size()) {
+      log.warn(
+          "Processing questionnaire {} against {} of {} requested documents; the rest are not"
+              + " this tenant's or no longer exist",
+          questionnaireId,
+          documents.size(),
+          documentIds.size());
+    }
+
+    return processQuestionnaire(questionnaireId, documents);
+  }
+
   @Transactional
   public VantaQuestionnaire processQuestionnaire(UUID questionnaireId, List<Document> documents) {
     log.info("Processing questionnaire {} with {} documents", questionnaireId, documents.size());
 
-    VantaQuestionnaire questionnaire =
-        questionnaireRepository
-            .findById(questionnaireId)
-            .orElseThrow(() -> new IllegalArgumentException("Questionnaire not found"));
+    VantaQuestionnaire questionnaire = requireOwned(questionnaireId);
 
     questionnaire.setStatus(VantaQuestionnaire.QuestionnaireStatus.PROCESSING);
     questionnaireRepository.save(questionnaire);
@@ -194,28 +259,19 @@ public class VantaQuestionnaireService {
   }
 
   public byte[] exportToOriginalExcel(UUID questionnaireId) throws IOException {
-    VantaQuestionnaire questionnaire =
-        questionnaireRepository
-            .findById(questionnaireId)
-            .orElseThrow(() -> new IllegalArgumentException("Questionnaire not found"));
+    VantaQuestionnaire questionnaire = requireOwned(questionnaireId);
 
     return exportService.exportToOriginalExcel(questionnaire, questionnaire.getOriginalFileBytes());
   }
 
   public byte[] exportToNewExcel(UUID questionnaireId) throws IOException {
-    VantaQuestionnaire questionnaire =
-        questionnaireRepository
-            .findById(questionnaireId)
-            .orElseThrow(() -> new IllegalArgumentException("Questionnaire not found"));
+    VantaQuestionnaire questionnaire = requireOwned(questionnaireId);
 
     return exportService.exportToNewExcel(questionnaire);
   }
 
   public byte[] exportExecutiveSummary(UUID questionnaireId) throws IOException {
-    VantaQuestionnaire questionnaire =
-        questionnaireRepository
-            .findById(questionnaireId)
-            .orElseThrow(() -> new IllegalArgumentException("Questionnaire not found"));
+    VantaQuestionnaire questionnaire = requireOwned(questionnaireId);
 
     return exportService.exportExecutiveSummary(questionnaire);
   }
@@ -286,6 +342,7 @@ public class VantaQuestionnaireService {
   }
 
   public Optional<VantaQuestionnaire> getQuestionnaire(UUID id) {
-    return questionnaireRepository.findById(id);
+    return questionnaireRepository.findByIdAndTenantIdAndDeletedAtIsNull(
+        id, TenantContext.requireCurrentTenant().getId());
   }
 }
