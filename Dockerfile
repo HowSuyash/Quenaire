@@ -1,55 +1,58 @@
-# Build stage
-FROM gradle:8.5-jdk21 AS builder
+# syntax=docker/dockerfile:1
+
+# ---- build ------------------------------------------------------------------
+# The Gradle wrapper, not the `gradle` image's own Gradle. The project is on
+# 9.7.1 and its settings plugin requires it; the previous `gradle:8.5-jdk21`
+# base would have failed this build the first time it was run.
+FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
-# Copy gradle files first for dependency caching
-COPY build.gradle.kts settings.gradle.kts gradle.properties* ./
+# Wrapper and build scripts first, so a source-only change reuses the
+# dependency layer below.
+COPY gradlew ./
 COPY gradle/ gradle/
+COPY build.gradle.kts settings.gradle.kts ./
+COPY license-header.txt spotbugs-exclude.xml ./
 
-# Download dependencies
-RUN gradle dependencies --no-daemon
+# Belt and braces: .gitattributes keeps gradlew as LF, but a checkout that
+# predates it would still carry CRLF into the image.
+RUN sed -i 's/$//' gradlew && chmod +x gradlew && ./gradlew --no-daemon dependencies --quiet || true
 
-# Copy source code
 COPY src/ src/
 
-# Build application
-RUN gradle bootJar --no-daemon -x test
+# Tests need Postgres and a language model; neither exists during an image
+# build. CI runs them against real services before anything is deployed.
+RUN ./gradlew --no-daemon bootJar -x test -x integrationTest --quiet
 
-# Runtime stage
+# ---- runtime ----------------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Install curl for healthchecks
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl tzdata
 
-# Create non-root user
-RUN addgroup -g 1000 -S appgroup && \
-    adduser -u 1000 -S appuser -G appgroup
+RUN addgroup -g 1000 -S appgroup \
+ && adduser -u 1000 -S appuser -G appgroup
 
-# Copy built JAR from builder
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Change ownership
-RUN chown -R appuser:appgroup /app
+# Uploaded questionnaires and exported PDFs land here; mounted as a volume so
+# they outlive the container.
+RUN mkdir -p /var/complyai/storage \
+ && chown -R appuser:appgroup /app /var/complyai
 
 USER appuser
 
-# Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/api/actuator/health/liveness || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -fsS http://localhost:8080/api/actuator/health/liveness || exit 1
 
-# JVM options for containerized environment
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 \
-    -XX:InitialRAMPercentage=50.0 \
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=70.0 \
     -XX:+UseContainerSupport \
-    -XX:+UseG1GC \
-    -XX:MaxGCPauseMillis=100 \
+    -XX:+UseSerialGC \
+    -XX:+ExitOnOutOfMemoryError \
     -Djava.security.egd=file:/dev/./urandom"
 
-# Run application
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

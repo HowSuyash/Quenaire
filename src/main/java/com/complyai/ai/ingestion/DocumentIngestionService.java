@@ -30,6 +30,7 @@ import java.util.UUID;
 import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -47,7 +48,14 @@ public class DocumentIngestionService {
   private final DocumentParserService parserService;
   private final DocumentChunkerService chunkerService;
   private final EmbeddingService embeddingService;
-  private final KafkaTemplate<String, Object> kafkaTemplate;
+
+  /**
+   * Optional: nothing in the product consumes these topics yet -- there is no
+   * {@code @KafkaListener} anywhere -- so a deployment without a broker loses nothing. Injected as
+   * an ObjectProvider so the application starts when Kafka autoconfiguration is switched off.
+   */
+  private final ObjectProvider<KafkaTemplate<String, Object>> kafkaTemplate;
+
   private final String storagePath;
   private final com.complyai.domain.tenant.TenantRepository tenantRepository;
 
@@ -57,7 +65,7 @@ public class DocumentIngestionService {
       DocumentParserService parserService,
       DocumentChunkerService chunkerService,
       EmbeddingService embeddingService,
-      KafkaTemplate<String, Object> kafkaTemplate,
+      ObjectProvider<KafkaTemplate<String, Object>> kafkaTemplate,
       @Value("${app.storage.local.path:./storage}") String storagePath,
       com.complyai.domain.tenant.TenantRepository tenantRepository) {
     this.documentRepository = documentRepository;
@@ -301,7 +309,8 @@ public class DocumentIngestionService {
    */
   private void publishIndexed(Document document) {
     try {
-      kafkaTemplate.send("document.indexed", document.getId().toString(), document);
+      kafkaTemplate.ifAvailable(
+          t -> t.send("document.indexed", document.getId().toString(), document));
     } catch (Exception e) {
       log.warn(
           "Document {} is indexed but the document.indexed event could not be published: {}",

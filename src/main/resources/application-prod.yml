@@ -1,0 +1,143 @@
+# Production profile.
+#
+# docker-compose.prod.yml has set SPRING_PROFILES_ACTIVE=prod since it was
+# written, but no such profile existed -- the application silently fell back to
+# the base configuration, which logs every SQL statement and every bound
+# parameter. This file is that profile.
+#
+# It deliberately requires Postgres and nothing else. Redis has no user in the
+# codebase (no RedisTemplate, no @Cacheable) and nothing consumes the Kafka
+# topics (no @KafkaListener anywhere), so running either would cost money to
+# carry infrastructure that does no work. Both can be reintroduced by removing
+# the exclusions below once something actually reads from them.
+spring:
+  datasource:
+    hikari:
+      # A small instance should not open twenty connections to a database that
+      # is usually sharing the same box.
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      # Flyway owns the schema. Validate catches an entity that has drifted from
+      # its table at startup rather than at the first query against it.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 25
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+  cache:
+    type: simple
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+server:
+  # Behind a reverse proxy terminating TLS; without this the application builds
+  # redirect and cookie URLs from the internal http://host:8080.
+  forward-headers-strategy: native
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+  tomcat:
+    max-swallow-size: 50MB
+
+management:
+  health:
+    mail:
+      # Off until SMTP is configured. The indicator defaults to the development
+      # MailHog address and fails to authenticate, which takes the whole health
+      # endpoint DOWN -- and a load balancer reading /health would pull a working
+      # application out of rotation over an unconfigured optional feature.
+      # Set MAIL_HEALTH_ENABLED=true once MAIL_HOST is real, so that a broken
+      # mail server is visible rather than assumed.
+      enabled: ${MAIL_HEALTH_ENABLED:false}
+
+  endpoints:
+    web:
+      base-path: /api/actuator
+      exposure:
+        # No `loggers`: it is writable, and an unauthenticated caller could turn
+        # SQL logging back on -- which is where the data below is exposed.
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      # `always` names the database, its version and connection details to any
+      # caller that can reach the endpoint.
+      show-details: when-authorized
+
+logging:
+  level:
+    root: WARN
+    com.complyai: ${LOG_LEVEL:INFO}
+    # Both of these are DEBUG/TRACE in the base configuration. Left on in
+    # production they write every statement and every bound parameter -- tenant
+    # names, document text, credentials -- to disk in plain text.
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.security: WARN
+    org.flywaydb: INFO
+
+app:
+  frontend-url: ${FRONTEND_URL}
+
+  # Hosted generation. Local generation measured ~20s a question on CPU, which
+  # is half an hour for a ninety-question questionnaire -- unusable in a demo
+  # and worse under any concurrency. Self-hosted deployments set this to
+  # `ollama` and accept the latency in exchange for the prompts never leaving
+  # their network.
+  llm:
+    provider: ${LLM_PROVIDER:anthropic}
+
+  anthropic:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-haiku-4-5-20251001}
+    max-tokens: ${ANTHROPIC_MAX_TOKENS:2048}
+    timeout-seconds: 120
+
+  # Embeddings stay local either way: nomic-embed-text is small enough to run
+  # beside the application, and embedding is the cheap half of the pipeline
+  # (~90ms against ~20s for generation).
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://ollama:11434}
+    embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+
+  storage:
+    type: ${STORAGE_TYPE:local}
+    local:
+      path: ${STORAGE_LOCAL_PATH:/var/complyai/storage}
+
+  signup:
+    enabled: ${SIGNUP_ENABLED:true}
+
+# Outbound email: reviewer invitations and notifications. Unset until a provider
+# is chosen, and the health indicator above stays off while it is.
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

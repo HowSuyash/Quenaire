@@ -1,0 +1,31 @@
+# Caddy obtains and renews the certificate itself; there is no certbot step.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip
+
+	# The API first: these paths belong to Spring Boot, everything else to Next.
+	handle /api/* {
+		reverse_proxy app:8080
+	}
+
+	# Metrics are for the operator, not the internet. Actuator exposes health,
+	# info and prometheus; none of it should be reachable from outside.
+	handle /api/actuator/* {
+		respond 404
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

@@ -22,6 +22,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,13 @@ public class AgentTaskQueue {
   private static final Logger log = LoggerFactory.getLogger(AgentTaskQueue.class);
 
   private final AgentTaskRepository taskRepository;
-  private final KafkaTemplate<String, String> kafkaTemplate;
+
+  /**
+   * Optional: nothing in the product consumes these topics yet -- there is no
+   * {@code @KafkaListener} anywhere -- so a deployment without a broker loses nothing. Injected as
+   * an ObjectProvider so the application starts when Kafka autoconfiguration is switched off.
+   */
+  private final ObjectProvider<KafkaTemplate<String, String>> kafkaTemplate;
 
   // Local lock registry for distributed locking
   private final Map<UUID, ReentrantLock> taskLocks = new ConcurrentHashMap<>();
@@ -48,7 +55,8 @@ public class AgentTaskQueue {
   private static final int LOCK_TIMEOUT_SECONDS = 30;
 
   public AgentTaskQueue(
-      AgentTaskRepository taskRepository, KafkaTemplate<String, String> kafkaTemplate) {
+      AgentTaskRepository taskRepository,
+      ObjectProvider<KafkaTemplate<String, String>> kafkaTemplate) {
     this.taskRepository = taskRepository;
     this.kafkaTemplate = kafkaTemplate;
   }
@@ -226,7 +234,7 @@ public class AgentTaskQueue {
           String.format(
               "{\"taskId\":\"%s\",\"status\":\"%s\",\"result\":%s,\"timestamp\":\"%s\"}",
               taskId, status, resultJson != null ? resultJson : "null", OffsetDateTime.now());
-      kafkaTemplate.send(TASK_RESULTS_TOPIC, taskId.toString(), message);
+      kafkaTemplate.ifAvailable(t -> t.send(TASK_RESULTS_TOPIC, taskId.toString(), message));
     } catch (Exception e) {
       log.error("Failed to publish task result to Kafka", e);
     }

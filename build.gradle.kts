@@ -89,7 +89,14 @@ dependencies {
     
 
     // Integrations
-    implementation("com.atlassian.jira:jira-rest-java-client-core:5.2.0")
+    // The Jira client drags in Jersey 1.19 (2015), which brings the relocated
+    // com.sun.xml.bind:jaxb-core alongside the org.glassfish.jaxb one Boot manages.
+    // Two groups, one file name, and bootJar refuses to package a duplicate entry --
+    // which is why the application had never been built into a runnable jar.
+    implementation("com.atlassian.jira:jira-rest-java-client-core:5.2.0") {
+        exclude(group = "com.sun.xml.bind", module = "jaxb-impl")
+        exclude(group = "com.sun.xml.bind", module = "jaxb-core")
+    }
     implementation("com.atlassian.jira:jira-rest-java-client-api:5.2.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")

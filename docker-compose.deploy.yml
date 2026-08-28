@@ -1,0 +1,149 @@
+# The stack that actually gets deployed.
+#
+# docker-compose.prod.yml asks for Keycloak, Kafka, Redis, S3 and SMTP. Nothing
+# in the codebase reads from Redis or Kafka -- there is no RedisTemplate, no
+# @Cacheable and no @KafkaListener anywhere -- so carrying them costs money and
+# failure modes for no work done. This file runs what the product needs:
+# Postgres for everything, Ollama for embeddings, and Caddy for TLS.
+#
+# Generation is hosted (see application-prod.yml). Embeddings stay local because
+# nomic-embed-text is small and embedding is the cheap half of the pipeline.
+#
+#   cp .env.deploy.example .env && edit it
+#   docker compose -f docker-compose.deploy.yml up -d
+#
+# Requires ~4GB RAM; 8GB is comfortable.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: complyai
+      POSTGRES_USER: complyai
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      # Off by default in the image; the schema declares vector columns.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U complyai -d complyai"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # Not published to the host: only the app needs it, and an open 5432 is the
+    # single most scanned port on a public IP.
+    expose:
+      - "5432"
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama-models:/root/.ollama
+    expose:
+      - "11434"
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # Pulls the embedding model once, then exits. Without this the first upload
+  # fails while Ollama downloads 275MB, and the document is marked FAILED.
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["sh", "-c", "ollama pull nomic-embed-text"]
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: complyai-app:${TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # stringtype=unspecified is required: the schema uses native Postgres enum
+      # columns, and the driver binds enums as varchar without it.
+      DATABASE_URL: jdbc:postgresql://postgres:5432/complyai?stringtype=unspecified
+      DATABASE_USER: complyai
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      FRONTEND_URL: ${PUBLIC_URL:?set PUBLIC_URL in .env}
+      LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
+      OLLAMA_BASE_URL: http://ollama:11434
+      STORAGE_LOCAL_PATH: /var/complyai/storage
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - app-storage:/var/complyai/storage
+    expose:
+      - "8080"
+    deploy:
+      resources:
+        limits:
+          memory: 1500M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked in at build time. Changing the public URL means rebuilding this
+        # image, not just restarting it.
+        NEXT_PUBLIC_API_URL: ${PUBLIC_URL}
+    image: complyai-frontend:${TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      - app
+    expose:
+      - "3000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Terminates TLS and issues its own certificate from Let's Encrypt. The only
+  # container with published ports.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  postgres-data:
+  ollama-models:
+  app-storage:
+  caddy-data:
+  caddy-config:

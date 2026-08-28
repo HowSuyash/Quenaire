@@ -1,0 +1,23 @@
+# Default: let Git normalise text files in the repository.
+* text=auto
+
+# Shell scripts must keep LF regardless of the checkout platform. gradlew with
+# CRLF is syntactically invalid to /bin/sh, which broke the Docker build with
+# `./gradlew: Syntax error: "(" unexpected` -- the file was checked out on
+# Windows and copied verbatim into a Linux image.
+*.sh          text eol=lf
+gradlew       text eol=lf
+Dockerfile    text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+
+# Windows-only scripts keep CRLF.
+*.ps1         text eol=crlf
+*.bat         text eol=crlf
+gradlew.bat   text eol=crlf
+
+# Never touch binaries.
+*.jar         binary
+*.png         binary
+*.jpg         binary
+*.pdf         binary

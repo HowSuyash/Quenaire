@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Emits .next/standalone with only the modules actually imported, so the
+  // runtime image does not carry node_modules. Roughly 1.1GB down to ~200MB,
+  // which matters on a small VM that is also running Postgres and the API.
+  output: 'standalone',
   images: {
     domains: ['localhost'],
   },
