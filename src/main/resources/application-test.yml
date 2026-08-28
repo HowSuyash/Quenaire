@@ -33,6 +33,14 @@ spring:
   kafka:
     listener:
       auto-startup: false
+    producer:
+      properties:
+        # No broker in tests. Without a short block, every publish retries for 60s and
+        # buries the test output in reconnection warnings.
+        max.block.ms: 500
+        request.timeout.ms: 500
+        retries: 0
+        reconnect.backoff.max.ms: 1000
 
   autoconfigure:
     exclude:

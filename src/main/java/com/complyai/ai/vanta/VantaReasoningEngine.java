@@ -153,15 +153,22 @@ public class VantaReasoningEngine {
           .build();
     }
 
-    // Generate answer using Chain-of-Thought prompting
-    String generatedAnswer =
-        generateAnswerWithChainOfThought(question, retrievalResult.getChunks());
+    // The completion is a labelled document: reasoning, answer, the model's own
+    // confidence, anything it could not find. Only the answer section is the answer;
+    // storing the whole thing put "THINKING:" and "CONFIDENCE: HIGH" into the PDF the
+    // customer sends to their vendor.
+    ChainOfThoughtResponse response =
+        ChainOfThoughtResponse.parse(
+            generateAnswerWithChainOfThought(question, retrievalResult.getChunks()));
+    String generatedAnswer = response.answer();
 
-    // Map to dropdown option if applicable
-    String selectedOption = mapAnswerToOption(generatedAnswer, question.getOptions());
+    // Prefer the option the model named outright over guessing from prose.
+    String selectedOption =
+        response.selectedOption() != null
+            ? matchOption(response.selectedOption(), question.getOptions())
+            : mapAnswerToOption(generatedAnswer, question.getOptions());
 
-    // Calculate confidence based on retrieval scores and answer quality
-    int confidenceScore = calculateConfidence(question, retrievalResult, generatedAnswer);
+    int confidenceScore = calculateConfidence(question, retrievalResult, response);
     ConfidenceLevel confidenceLevel = ConfidenceLevel.fromScore(confidenceScore);
 
     // Extract detailed citations with paragraph-level granularity
@@ -176,7 +183,7 @@ public class VantaReasoningEngine {
         .explanation(buildExplanation(confidenceLevel, retrievalResult))
         .selectedOption(selectedOption)
         .retrievedChunks(retrievalResult.getChunks().size())
-        .chainOfThought(extractChainOfThought(generatedAnswer))
+        .chainOfThought(response.thinking())
         .build();
   }
 
@@ -257,22 +264,6 @@ public class VantaReasoningEngine {
     return prompt.toString();
   }
 
-  /** Call LLM with Chain-of-Thought prompt */
-
-  /** Extract chain of thought from LLM response */
-  private String extractChainOfThought(String llmResponse) {
-    if (llmResponse == null) return null;
-
-    // Extract thinking section from LLM response
-    int thinkingStart = llmResponse.indexOf("THINKING:");
-    int thinkingEnd = llmResponse.indexOf("ANSWER:");
-
-    if (thinkingStart >= 0 && thinkingEnd > thinkingStart) {
-      return llmResponse.substring(thinkingStart + 9, thinkingEnd).trim();
-    }
-    return null;
-  }
-
   /** Find answer from similar question in another questionnaire (cross-questionnaire learning) */
   private Optional<Answer> findCrossQuestionnaireAnswer(VantaQuestion question) {
     // In production, search across all questionnaires for similar questions
@@ -333,49 +324,90 @@ public class VantaReasoningEngine {
     };
   }
 
+  /**
+   * How much this answer can be trusted without a human reading it, from 0 to 100.
+   *
+   * <p>Three independent signals, because each is weak alone: how close the retrieved passages were
+   * to the question, whether the model itself thought the context answered it, and whether the
+   * answer visibly quotes its sources.
+   *
+   * <p>Answer length used to be worth up to 30 points, which paid the model to ramble and scored a
+   * precise one-line answer below a vague paragraph. A further 5 points were awarded for the
+   * response containing the literal strings "THINKING:" and "ANSWER:" -- scaffolding, present in
+   * every response, and now stripped before this is called.
+   */
   private int calculateConfidence(
-      VantaQuestion question, RetrievalService.RetrievalResult retrieval, String answer) {
-    double baseScore = 0;
+      VantaQuestion question,
+      RetrievalService.RetrievalResult retrieval,
+      ChainOfThoughtResponse response) {
+    String answer = response.answer();
+    if (answer == null || answer.isBlank()) {
+      return 0;
+    }
 
-    // Retrieval quality (0-40 points)
+    double score = 0;
+
+    // How close the retrieved passages were to the question (0-45).
     if (!retrieval.getChunks().isEmpty()) {
       double avgRelevance =
           retrieval.getChunks().stream()
               .mapToDouble(DocumentChunk::getRelevanceScore)
               .average()
               .orElse(0.0);
-      baseScore += avgRelevance * 40;
+      score += avgRelevance * 45;
     }
 
-    // Answer completeness (0-30 points)
-    if (answer != null && answer.length() > 50) {
-      baseScore += Math.min(30, answer.length() / 10);
+    // What the model made of its own context (0-30). It is the only signal that reflects
+    // whether the passages actually answered the question rather than merely resembling it.
+    score +=
+        switch (response.statedConfidence()) {
+          case HIGH -> 30;
+          case MEDIUM -> 18;
+          case LOW -> 5;
+          case UNSTATED -> 12;
+        };
+
+    // Anything the model said it could not find is a reason for a human to look.
+    if (response.missing().isPresent()) {
+      score -= 15;
     }
 
-    // Option matching for dropdowns (0-20 points)
-    if (question.getQuestionType().hasOptions() && question.getOptions() != null) {
-      String selected = mapAnswerToOption(answer, question.getOptions());
-      if (selected != null) baseScore += 20;
+    // Grounding: an answer that quotes or points at its sources (0-15).
+    if (answer.contains("[Source") || answer.contains("\"")) {
+      score += 15;
     }
 
-    // Source document quality (0-10 points)
-    if (!retrieval.getChunks().isEmpty()) {
-      boolean hasOfficialDoc =
-          retrieval.getChunks().stream()
-              .anyMatch(
-                  c ->
-                      c.getDocument().getSourceType().contains("SOC")
-                          || c.getDocument().getSourceType().contains("ISO")
-                          || c.getDocument().getSourceType().contains("CERT"));
-      if (hasOfficialDoc) baseScore += 10;
+    // A dropdown answer that maps onto an offered option (0-10).
+    if (question.getQuestionType().hasOptions()
+        && question.getOptions() != null
+        && mapAnswerToOption(answer, question.getOptions()) != null) {
+      score += 10;
     }
 
-    // Chain-of-Thought quality bonus (0-5 points)
-    if (answer != null && answer.contains("THINKING:") && answer.contains("ANSWER:")) {
-      baseScore += 5;
+    // Audited sources carry more weight with the vendor reading the reply (0-10).
+    if (retrieval.getChunks().stream().anyMatch(VantaReasoningEngine::isAuditedSource)) {
+      score += 10;
     }
 
-    return Math.min(100, Math.max(0, (int) Math.round(baseScore)));
+    return Math.min(100, Math.max(0, (int) Math.round(score)));
+  }
+
+  private static boolean isAuditedSource(DocumentChunk chunk) {
+    String type = chunk.getDocument() == null ? null : chunk.getDocument().getSourceType();
+    return type != null && (type.contains("SOC") || type.contains("ISO") || type.contains("CERT"));
+  }
+
+  /** Matches text the model named as its option against the options actually offered. */
+  private String matchOption(String stated, List<String> options) {
+    if (options == null || options.isEmpty()) {
+      return null;
+    }
+    for (String option : options) {
+      if (option.equalsIgnoreCase(stated)) {
+        return option;
+      }
+    }
+    return mapAnswerToOption(stated, options);
   }
 
   private String mapAnswerToOption(String answer, List<String> options) {

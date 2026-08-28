@@ -57,7 +57,12 @@ public interface AnswerLibraryRepository extends JpaRepository<AnswerLibraryEntr
           AND deleted_at IS NULL
           AND status = 'ACTIVE'
           AND embedding IS NOT NULL
-          AND (:questionType IS NULL OR question_type = CAST(:questionType AS vanta_question_type))
+          -- Cast before the null check. A bare parameter compared only against NULL gives
+          -- Postgres nothing to infer a type from, and it rejects the statement with "could
+          -- not determine data type". The service caught that and fell back to word overlap,
+          -- so semantic reuse looked like it worked while never once running.
+          AND (CAST(:questionType AS text) IS NULL
+               OR question_type = CAST(:questionType AS vanta_question_type))
         ORDER BY embedding <=> CAST(:queryVector AS vector)
         LIMIT :limit
         """,

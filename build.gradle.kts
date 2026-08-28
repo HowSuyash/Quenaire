@@ -183,6 +183,12 @@ tasks.register<Test>("integrationTest") {
         includeTags("integration")
     }
 
+    // These tests assert against Postgres, pgvector and a language model, none of which are
+    // inputs Gradle can see. Left cacheable, an unchanged source tree reports BUILD SUCCESSFUL
+    // without running anything -- including when the database has been dropped or the model is
+    // no longer installed. The point of the suite is that it actually ran.
+    outputs.upToDateWhen { false }
+
     shouldRunAfter(tasks.named("test"))
 }
 
