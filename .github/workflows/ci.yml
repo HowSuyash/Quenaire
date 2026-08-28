@@ -89,7 +89,11 @@ jobs:
         run: ./gradlew test --no-daemon
         env:
           SPRING_PROFILES_ACTIVE: test
-          DATABASE_URL: jdbc:postgresql://localhost:5432/complyai_test
+          # stringtype=unspecified is not optional: the schema uses native
+          # Postgres enum columns and the driver binds enums as varchar,
+          # which the server refuses to cast. Without it every integration
+          # test that writes a row fails.
+          DATABASE_URL: jdbc:postgresql://localhost:5432/complyai_test?stringtype=unspecified
           DATABASE_USER: complyai
           DATABASE_PASSWORD: complyai
 
@@ -97,7 +101,11 @@ jobs:
         run: ./gradlew integrationTest --no-daemon
         env:
           SPRING_PROFILES_ACTIVE: test
-          DATABASE_URL: jdbc:postgresql://localhost:5432/complyai_test
+          # stringtype=unspecified is not optional: the schema uses native
+          # Postgres enum columns and the driver binds enums as varchar,
+          # which the server refuses to cast. Without it every integration
+          # test that writes a row fails.
+          DATABASE_URL: jdbc:postgresql://localhost:5432/complyai_test?stringtype=unspecified
           DATABASE_USER: complyai
           DATABASE_PASSWORD: complyai
 
