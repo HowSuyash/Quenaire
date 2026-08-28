@@ -15,6 +15,7 @@ package com.complyai.domain.billing;
 
 import com.complyai.domain.billing.BillingService.BillingException;
 import com.complyai.domain.tenant.Tenant;
+import com.complyai.security.TenantContext;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
@@ -216,8 +217,7 @@ public class BillingController {
   }
 
   private Tenant getCurrentTenant() {
-    // In real implementation, use TenantContext
-    return null;
+    return TenantContext.requireCurrentTenant();
   }
 
   public record SubscribeRequest(BillingPlan plan, String paymentMethodId) {}

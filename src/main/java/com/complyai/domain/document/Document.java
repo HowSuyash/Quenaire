@@ -16,7 +16,6 @@ package com.complyai.domain.document;
 import com.complyai.domain.common.BaseEntity;
 import com.complyai.domain.tenant.Tenant;
 import com.complyai.domain.user.User;
-import com.pgvector.PGvector;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -98,9 +97,11 @@ public class Document extends BaseEntity {
   @Column(name = "language", length = 10)
   private String language;
 
-  @JdbcTypeCode(SqlTypes.VECTOR)
-  @Column(name = "embedding", columnDefinition = "vector(768)")
-  private PGvector embedding;
+  // The documents table has an `embedding` column, deliberately left unmapped. Nothing ever
+  // wrote it — retrieval embeds chunks, not whole documents — so every row is null, and
+  // hibernate-vector throws a NullPointerException reading a null vector rather than yielding
+  // null. Mapped, it made every query that loads a Document fail. Left unmapped it is inert;
+  // dropping the column is a migration for whenever document-level similarity is ruled out.
 
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "metadata_json", columnDefinition = "jsonb")
@@ -236,14 +237,6 @@ public class Document extends BaseEntity {
 
   public void setLanguage(String language) {
     this.language = language;
-  }
-
-  public PGvector getEmbedding() {
-    return embedding;
-  }
-
-  public void setEmbedding(PGvector embedding) {
-    this.embedding = embedding;
   }
 
   public String getMetadataJson() {

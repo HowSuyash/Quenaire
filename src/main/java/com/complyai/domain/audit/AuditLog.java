@@ -23,7 +23,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -64,12 +63,10 @@ public class AuditLog extends BaseEntity {
   @Column(name = "description", columnDefinition = "text")
   private String description;
 
-  @Lob
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "old_values_json", columnDefinition = "jsonb")
   private String oldValuesJson;
 
-  @Lob
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "new_values_json", columnDefinition = "jsonb")
   private String newValuesJson;

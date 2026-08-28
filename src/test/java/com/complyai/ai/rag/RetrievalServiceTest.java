@@ -63,7 +63,7 @@ class RetrievalServiceTest extends IntegrationTestBase {
     Tenant tenant = createTenant();
     TenantContext.setCurrentTenant(tenant);
 
-    when(embeddingService.embed(anyString())).thenReturn(new float[1536]);
+    when(embeddingService.embed(anyString())).thenReturn(new float[VectorLiterals.DIMENSIONS]);
 
     Question question = createQuestion(tenant);
 
@@ -84,14 +84,14 @@ class RetrievalServiceTest extends IntegrationTestBase {
     chunkRepository.save(chunk);
 
     // Mock embedding to return similar vector
-    float[] queryEmbedding = new float[1536];
+    float[] queryEmbedding = new float[VectorLiterals.DIMENSIONS];
     queryEmbedding[0] = 1.0f;
     when(embeddingService.embed(anyString())).thenReturn(queryEmbedding);
 
     // Mock chunk embedding to be similar
-    float[] chunkEmbedding = new float[1536];
+    float[] chunkEmbedding = new float[VectorLiterals.DIMENSIONS];
     chunkEmbedding[0] = 0.9f;
-    chunk.setEmbedding(new com.pgvector.PGvector(chunkEmbedding));
+    chunk.setEmbedding(chunkEmbedding);
     chunkRepository.save(chunk);
 
     Question question = createQuestion(tenant);
@@ -105,7 +105,9 @@ class RetrievalServiceTest extends IntegrationTestBase {
   private Tenant createTenant() {
     Tenant tenant = new Tenant();
     tenant.setName("Test Tenant");
-    tenant.setSlug("test-tenant");
+    // Unique per run: the slug is unique in the schema and integration tests share a
+    // long-lived database, so a fixed value fails on the second run rather than the first.
+    tenant.setSlug("test-tenant-" + System.nanoTime());
     tenant.setStatus(TenantStatus.ACTIVE);
     tenant.setPlan(TenantPlan.FREE);
     tenant.setSettingsJson("{}");

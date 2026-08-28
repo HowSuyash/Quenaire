@@ -50,8 +50,11 @@ public class VantaQuestionnaire extends BaseEntity {
   @Column(name = "file_name", length = 500)
   private String fileName;
 
+  // No @Lob: on Postgres that maps byte[] to a large object (oid), while the
+  // column is bytea, and the insert is rejected outright. VARBINARY is the
+  // binding that produces bytea.
+  @JdbcTypeCode(SqlTypes.VARBINARY)
   @Column(name = "original_file_bytes", columnDefinition = "BYTEA")
-  @Lob
   private byte[] originalFileBytes;
 
   @Enumerated(EnumType.STRING)

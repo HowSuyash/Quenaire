@@ -13,14 +13,15 @@
  */
 package com.complyai.domain.questionnaire.vanta;
 
+import com.complyai.ai.rag.VectorLiterals;
 import com.complyai.domain.common.BaseEntity;
 import com.complyai.domain.tenant.Tenant;
-import com.pgvector.PGvector;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.hibernate.annotations.Array;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -50,7 +51,8 @@ public class AnswerLibraryEntry extends BaseEntity {
    */
   @JdbcTypeCode(SqlTypes.VECTOR)
   @Column(name = "embedding", columnDefinition = "vector(768)")
-  private PGvector embedding;
+  @Array(length = VectorLiterals.DIMENSIONS)
+  private float[] embedding;
 
   /**
    * Which model produced {@link #embedding}. Changing embedding models invalidates every stored
@@ -144,11 +146,11 @@ public class AnswerLibraryEntry extends BaseEntity {
     this.questionHash = questionHash;
   }
 
-  public PGvector getEmbedding() {
+  public float[] getEmbedding() {
     return embedding;
   }
 
-  public void setEmbedding(PGvector embedding) {
+  public void setEmbedding(float[] embedding) {
     this.embedding = embedding;
   }
 

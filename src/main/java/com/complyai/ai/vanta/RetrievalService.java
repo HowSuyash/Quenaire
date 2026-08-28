@@ -13,13 +13,14 @@
  */
 package com.complyai.ai.vanta;
 
+import com.complyai.ai.rag.VectorLiterals;
 import com.complyai.domain.document.Document;
 import com.complyai.domain.document.DocumentChunk;
 import com.complyai.domain.document.DocumentChunkRepository;
 import com.complyai.security.TenantContext;
-import com.pgvector.PGvector;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -80,13 +81,13 @@ public class RetrievalService {
     }
 
     float[] queryEmbedding = embeddingService.generateEmbeddingRaw(query);
-    PGvector queryVector = new PGvector(queryEmbedding);
+    String queryVector = VectorLiterals.of(queryEmbedding);
 
     boolean scoped = documents != null && !documents.isEmpty();
     int fetchLimit = scoped ? topK * scopedOverfetchFactor : topK;
 
     List<DocumentChunk> chunks =
-        chunkRepository.findSimilarChunks(tenantId, queryVector, fetchLimit);
+        withDocuments(chunkRepository.findSimilarChunks(tenantId, queryVector, fetchLimit));
 
     if (scoped) {
       Set<UUID> allowed = documents.stream().map(Document::getId).collect(Collectors.toSet());
@@ -124,12 +125,23 @@ public class RetrievalService {
     return retrieve(query, List.of(), topK);
   }
 
-  private double similarityTo(float[] queryEmbedding, DocumentChunk chunk) {
-    PGvector stored = chunk.getEmbedding();
-    if (stored == null) {
-      return 0.0;
+  /** Resolves the lazy document on each chunk, keeping the database's ordering. */
+  private List<DocumentChunk> withDocuments(List<DocumentChunk> chunks) {
+    if (chunks.isEmpty()) {
+      return chunks;
     }
-    return cosineSimilarity(queryEmbedding, stored.toArray());
+    List<UUID> order = chunks.stream().map(DocumentChunk::getId).collect(Collectors.toList());
+    Map<UUID, DocumentChunk> loaded =
+        chunkRepository.findAllWithDocument(order).stream()
+            .collect(Collectors.toMap(DocumentChunk::getId, chunk -> chunk));
+    return order.stream()
+        .map(loaded::get)
+        .filter(java.util.Objects::nonNull)
+        .collect(Collectors.toList());
+  }
+
+  private double similarityTo(float[] queryEmbedding, DocumentChunk chunk) {
+    return cosineSimilarity(queryEmbedding, chunk.getEmbedding());
   }
 
   private static double cosineSimilarity(float[] a, float[] b) {

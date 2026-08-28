@@ -1,0 +1,72 @@
+# Profile for automated tests.
+#
+# Integration tests run against a real Postgres with pgvector (supplied by
+# Testcontainers locally, or a service container in CI), so none of the `local`
+# profile's H2 accommodations apply here. In particular the orm-local-h2.xml
+# mapping override must NOT be loaded: it rewrites the embedding columns to
+# VARBINARY, which cannot be validated against a real vector(768) column.
+#
+# The datasource is deliberately absent — IntegrationTestBase supplies it from
+# the container it starts, and CI supplies it from the environment.
+spring:
+  jpa:
+    hibernate:
+      # Flyway owns the schema; Hibernate only checks the mapping agrees.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+  # Nothing in a test run should block on a broker or a cache.
+  cache:
+    type: simple
+  data:
+    redis:
+      repositories:
+        enabled: false
+  kafka:
+    listener:
+      auto-startup: false
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+
+management:
+  health:
+    redis:
+      enabled: false
+    mail:
+      enabled: false
+
+app:
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    # Small model: tests should exercise the wiring, not wait on a large one.
+    model: ${OLLAMA_MODEL:llama3.2:3b}
+    embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+    timeout-seconds: 300
+    max-tokens: 256
+
+  rag:
+    chunk-size: 200
+    chunk-overlap: 40
+    top-k: 5
+    similarity-threshold: 0.3
+
+  # Signup is exercised directly; no identity provider in tests.
+  signup:
+    enabled: true
+
+logging:
+  level:
+    root: WARN
+    com.complyai: INFO
+    org.flywaydb: WARN

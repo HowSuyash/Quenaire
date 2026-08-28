@@ -18,7 +18,6 @@ import com.complyai.domain.document.DocumentChunk;
 import com.complyai.domain.document.DocumentChunkRepository;
 import com.complyai.domain.questionnaire.Question;
 import com.complyai.security.TenantContext;
-import com.pgvector.PGvector;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -49,7 +48,7 @@ public class RetrievalService {
     UUID tenantId = TenantContext.getCurrentTenantId();
 
     float[] questionEmbedding = embeddingService.embed(question.getText());
-    PGvector queryVector = new PGvector(questionEmbedding);
+    String queryVector = VectorLiterals.of(questionEmbedding);
 
     List<DocumentChunk> chunks = chunkRepository.findSimilarChunks(tenantId, queryVector, topK);
 
@@ -63,7 +62,7 @@ public class RetrievalService {
                     chunk.getChunkIndex(),
                     chunk.getStartChar(),
                     chunk.getEndChar(),
-                    cosineSimilarity(questionEmbedding, chunk.getEmbedding().toArray()),
+                    cosineSimilarity(questionEmbedding, chunk.getEmbedding()),
                     chunk.getMetadataJson()))
         .filter(r -> r.similarityScore() >= similarityThreshold)
         .collect(Collectors.toList());
@@ -71,7 +70,7 @@ public class RetrievalService {
 
   public List<RetrievalResult> retrieve(String queryText, UUID tenantId) {
     float[] queryEmbedding = embeddingService.embed(queryText);
-    PGvector queryVector = new PGvector(queryEmbedding);
+    String queryVector = VectorLiterals.of(queryEmbedding);
 
     List<DocumentChunk> chunks = chunkRepository.findSimilarChunks(tenantId, queryVector, topK);
 
@@ -85,7 +84,7 @@ public class RetrievalService {
                     chunk.getChunkIndex(),
                     chunk.getStartChar(),
                     chunk.getEndChar(),
-                    cosineSimilarity(queryEmbedding, chunk.getEmbedding().toArray()),
+                    cosineSimilarity(queryEmbedding, chunk.getEmbedding()),
                     chunk.getMetadataJson()))
         .filter(r -> r.similarityScore() >= similarityThreshold)
         .collect(Collectors.toList());

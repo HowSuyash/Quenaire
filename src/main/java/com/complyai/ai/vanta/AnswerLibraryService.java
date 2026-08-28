@@ -13,10 +13,11 @@
  */
 package com.complyai.ai.vanta;
 
+import com.complyai.ai.rag.VectorLiterals;
 import com.complyai.domain.questionnaire.vanta.*;
 import com.complyai.domain.tenant.Tenant;
+import com.complyai.security.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pgvector.PGvector;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.OffsetDateTime;
@@ -119,7 +120,7 @@ public class AnswerLibraryService {
       List<AnswerLibraryEntry> neighbours =
           answerLibraryRepository.findSemanticNeighbours(
               tenant.getId(),
-              toVectorLiteral(queryVector),
+              VectorLiterals.of(queryVector),
               questionType != null ? questionType.name() : null,
               limit);
 
@@ -158,8 +159,7 @@ public class AnswerLibraryService {
   private void embed(AnswerLibraryEntry entry, String normalizedQuestion, String approvedAnswer) {
     try {
       entry.setEmbedding(
-          new PGvector(
-              embeddingService.generateEmbeddingRaw(normalizedQuestion + " " + approvedAnswer)));
+          embeddingService.generateEmbeddingRaw(normalizedQuestion + " " + approvedAnswer));
       entry.setEmbeddingModel(embeddingService.modelId());
       entry.setEmbeddedAt(OffsetDateTime.now());
     } catch (Exception e) {
@@ -196,9 +196,9 @@ public class AnswerLibraryService {
     return sb.append(']').toString();
   }
 
-  private static double cosineSimilarity(float[] query, PGvector stored) {
+  private static double cosineSimilarity(float[] query, float[] stored) {
     if (stored == null) return 0.0;
-    float[] b = stored.toArray();
+    float[] b = stored;
     if (b.length != query.length) return 0.0;
 
     double dot = 0, normA = 0, normB = 0;
@@ -291,8 +291,7 @@ public class AnswerLibraryService {
   }
 
   private Tenant getCurrentTenant() {
-    // In real implementation, use TenantContext
-    return null; // Placeholder
+    return TenantContext.requireCurrentTenant();
   }
 
   private String bytesToHex(byte[] bytes) {

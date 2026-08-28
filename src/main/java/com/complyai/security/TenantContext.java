@@ -71,6 +71,22 @@ public final class TenantContext {
     currentUser.remove();
   }
 
+  /**
+   * The tenant for this request, never {@code null}.
+   *
+   * <p>For callers that cannot do their work without one. Two services previously kept a private
+   * {@code getCurrentTenant()} that returned {@code null} as a placeholder; every call through them
+   * failed with a NullPointerException whose stack trace pointed at the dereference rather than at
+   * the missing context.
+   */
+  public static Tenant requireCurrentTenant() {
+    Tenant tenant = currentTenant.get();
+    if (tenant == null) {
+      throw new IllegalStateException("No tenant context available");
+    }
+    return tenant;
+  }
+
   public static void requireTenant() {
     if (!hasTenant()) {
       throw new IllegalStateException("No tenant context available");

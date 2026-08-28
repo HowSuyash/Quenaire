@@ -11,7 +11,15 @@ plugins {
 
 group = "com.complyai"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_21
+// A toolchain, not just sourceCompatibility: the latter sets -source/-target but leaves the
+// build running on whatever JDK launched Gradle. That difference is not cosmetic -- Mockito's
+// inline mock maker and SpotBugs both read bytecode, and on a newer JDK than the one declared
+// they fail or silently skip classes. Pinning the JDK makes a local build mean what CI means.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 repositories {
     mavenCentral()
@@ -50,6 +58,10 @@ dependencies {
 
     // Vector Search (pgvector)
     implementation("com.pgvector:pgvector:0.1.6")
+    // Gives SqlTypes.VECTOR a real binding. Without it Hibernate serialises the
+    // field to bytea and Postgres rejects the insert:
+    //   column "embedding" is of type vector but expression is of type bytea
+    implementation("org.hibernate.orm:hibernate-vector:6.4.4.Final")
 
     // Kafka
     implementation("org.springframework.kafka:spring-kafka")
@@ -110,7 +122,9 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
 }
 
-tasks.withType<Test> {
+// Only the `test` task itself. Using withType<Test> here would also apply the
+// exclusion to integrationTest, which then matched nothing at all.
+tasks.named<Test>("test") {
     useJUnitPlatform {
         // Fast suite: no Docker, no Spring context. Must stay runnable anywhere.
         excludeTags("integration")

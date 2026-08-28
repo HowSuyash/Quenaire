@@ -28,6 +28,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,8 @@ import org.xml.sax.SAXException;
 
 @Service
 public class DocumentIngestionService {
+
+  private static final Logger log = LoggerFactory.getLogger(DocumentIngestionService.class);
 
   private final DocumentRepository documentRepository;
   private final DocumentChunkRepository chunkRepository;
@@ -169,7 +173,7 @@ public class DocumentIngestionService {
       docChunk.setTokenCount(chunk.tokenCount());
       docChunk.setStartChar(chunk.startChar());
       docChunk.setEndChar(chunk.endChar());
-      docChunk.setEmbedding(new com.pgvector.PGvector(embedding));
+      docChunk.setEmbedding(embedding);
       docChunk.setTenant(document.getTenant());
 
       chunkRepository.save(docChunk);
@@ -179,7 +183,7 @@ public class DocumentIngestionService {
     document.setProcessedAt(Instant.now());
     documentRepository.save(document);
 
-    kafkaTemplate.send("document.indexed", document.getId().toString(), document);
+    publishIndexed(document);
   }
 
   private void processTextDocument(Document document, String content) {
@@ -203,7 +207,7 @@ public class DocumentIngestionService {
       docChunk.setTokenCount(chunk.tokenCount());
       docChunk.setStartChar(chunk.startChar());
       docChunk.setEndChar(chunk.endChar());
-      docChunk.setEmbedding(new com.pgvector.PGvector(embedding));
+      docChunk.setEmbedding(embedding);
       docChunk.setTenant(document.getTenant());
 
       chunkRepository.save(docChunk);
@@ -213,7 +217,7 @@ public class DocumentIngestionService {
     document.setProcessedAt(Instant.now());
     documentRepository.save(document);
 
-    kafkaTemplate.send("document.indexed", document.getId().toString(), document);
+    publishIndexed(document);
   }
 
   private String computeHash(MultipartFile file) throws IOException {
@@ -285,6 +289,24 @@ public class DocumentIngestionService {
   public static class DuplicateDocumentException extends RuntimeException {
     public DuplicateDocumentException(String message) {
       super(message);
+    }
+  }
+
+  /**
+   * Announce that a document is indexed, without letting the announcement undo the work.
+   *
+   * <p>By the time this runs the document is parsed, chunked, embedded and saved. Letting a broker
+   * outage propagate meant the caller marked a perfectly good document FAILED and the user's upload
+   * was rejected -- so an unavailable Kafka stopped all ingestion.
+   */
+  private void publishIndexed(Document document) {
+    try {
+      kafkaTemplate.send("document.indexed", document.getId().toString(), document);
+    } catch (Exception e) {
+      log.warn(
+          "Document {} is indexed but the document.indexed event could not be published: {}",
+          document.getId(),
+          e.getMessage());
     }
   }
 }
