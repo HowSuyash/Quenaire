@@ -77,7 +77,13 @@ function requireMockData(operation: string, cause?: unknown): void {
   );
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+// Same origin by default: the browser calls /api/... and whatever served the page
+// forwards it to the backend (the rewrite in next.config.js). An absolute URL here
+// meant the backend host was compiled into the bundle, so every new domain -- a
+// customer's, a demo tunnel, staging -- needed its own frontend build, and every
+// request was cross-origin and needed CORS to allow credentials from anywhere.
+// Set NEXT_PUBLIC_API_URL only to point a local `next dev` at a remote backend.
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 const MOCK_QUESTIONNAIRES: Questionnaire[] = [
   {

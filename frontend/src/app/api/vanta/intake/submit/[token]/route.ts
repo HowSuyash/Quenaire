@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readBackendJson } from '../../../../../../lib/proxy';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -67,7 +68,7 @@ export async function POST(
     const buffer = Buffer.from(arrayBuffer);
 
     // Forward to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     
     const backendFormData = new FormData();
     backendFormData.append('file', new Blob([buffer]), file.name);
@@ -87,14 +88,14 @@ export async function POST(
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await readBackendJson(response);
         return NextResponse.json(
-          { success: false, error: error.error || 'Failed to submit to backend' },
+          { success: false, error: error?.error || 'Failed to submit to backend' },
           { status: response.status }
         );
       }
 
-      const data = await response.json();
+      const data = await readBackendJson(response);
       return NextResponse.json(data);
     } catch (error) {
       console.error('Intake submission error:', error);

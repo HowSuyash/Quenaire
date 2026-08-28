@@ -14,6 +14,10 @@
 #
 # Requires ~4GB RAM; 8GB is comfortable.
 
+# Named explicitly rather than derived from the directory, which changes with
+# the checkout path.
+name: complyai
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -88,6 +92,11 @@ services:
       OLLAMA_BASE_URL: http://ollama:11434
       STORAGE_LOCAL_PATH: /var/complyai/storage
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # The API is not reachable from a browser -- the frontend proxies it --
+      # so no cross-origin request should be permitted. The code default is
+      # "*" with credentials allowed, which would let any site call the API
+      # with the user's session.
+      CORS_ALLOWED_ORIGINS: ${PUBLIC_URL}
     volumes:
       - app-storage:/var/complyai/storage
     expose:
@@ -107,13 +116,17 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # Baked in at build time. Changing the public URL means rebuilding this
-        # image, not just restarting it.
-        NEXT_PUBLIC_API_URL: ${PUBLIC_URL}
+        # Internal address, the same in every deployment. Next bakes rewrite
+        # destinations at build time; the public hostname is not among them.
+        BACKEND_URL: http://app:8080
     image: complyai-frontend:${TAG:-latest}
     restart: unless-stopped
     depends_on:
       - app
+    environment:
+      # Read on the server at request time, so this image runs behind any
+      # hostname without being rebuilt.
+      BACKEND_URL: http://app:8080
     expose:
       - "3000"
     logging:

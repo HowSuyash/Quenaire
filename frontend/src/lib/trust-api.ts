@@ -1,6 +1,7 @@
 import { TrustLeadPayload, TrustProfile } from '@/types/trust';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+// Same origin; see the note in api.ts.
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 /**
  * Trust Center reads happen unauthenticated and often server-side, so this

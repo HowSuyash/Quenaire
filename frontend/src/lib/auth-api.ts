@@ -1,6 +1,7 @@
 import { RegisterPayload, RegisterResult, SignupStatus } from '@/types/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+// Same origin; see the note in api.ts.
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 /**
  * Signup talks to the API directly with plain `fetch` rather than the shared

@@ -16,10 +16,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules node_modules/
 COPY . .
 
-# Baked into the bundle at build time, not read at runtime: NEXT_PUBLIC_* values
-# are substituted during compilation. A different backend URL needs a rebuild.
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Next compiles rewrites into routes-manifest.json during the build, so the
+# rewrite destination is fixed here rather than read at runtime. That is fine:
+# this is the internal service address, identical in every deployment. The
+# public hostname is what must not be baked in, and it is not -- the browser
+# calls whatever origin served it.
+ARG BACKEND_URL=http://app:8080
+ENV BACKEND_URL=$BACKEND_URL
 
 # Offline fixtures are compiled out unless this is "true". Never set it here:
 # the guards exist so a production build cannot serve invented answers.

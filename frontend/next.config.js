@@ -8,11 +8,17 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
+  // Anything under /api that this app does not implement itself is forwarded to
+  // the backend. These are afterFiles rewrites, so the route handlers in
+  // src/app/api win and only unmatched paths are proxied.
+  //
+  // BACKEND_URL is read on the server at request time and never reaches the
+  // browser, so the same image runs behind any hostname.
   async rewrites() {
     return [
       {
-        source: '/api/backend/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/:path*`,
+        source: '/api/:path*',
+        destination: `${process.env.BACKEND_URL || 'http://localhost:8080'}/api/:path*`,
       },
     ];
   },

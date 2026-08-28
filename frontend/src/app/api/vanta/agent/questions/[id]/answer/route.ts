@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readBackendJson } from '../../../../../../../lib/proxy';
 
 export async function PUT(
   request: NextRequest,
@@ -8,7 +9,7 @@ export async function PUT(
     const { id } = params;
     const body = await request.json();
     
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const response = await fetch(`${backendUrl}/api/vanta/agent/sme/queue/${id}/answer`, {
       method: 'PUT',
       headers: {
@@ -19,14 +20,14 @@ export async function PUT(
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await readBackendJson(response);
       return NextResponse.json(
-        { success: false, error: error.error || 'Failed to update answer' },
+        { success: false, error: error?.error || 'Failed to update answer' },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
+    const data = await readBackendJson(response);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Update answer error:', error);

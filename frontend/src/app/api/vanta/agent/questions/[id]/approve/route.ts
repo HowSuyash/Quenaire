@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readBackendJson } from '../../../../../../../lib/proxy';
 
 export async function POST(
   request: NextRequest,
@@ -9,7 +10,7 @@ export async function POST(
     const body = await request.json();
     
     // In production, forward to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
     const response = await fetch(`${backendUrl}/api/vanta/agent/sme/queue/${id}/approve`, {
       method: 'POST',
       headers: {
@@ -21,14 +22,14 @@ export async function POST(
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await readBackendJson(response);
       return NextResponse.json(
-        { success: false, error: error.error || 'Failed to approve' },
+        { success: false, error: error?.error || 'Failed to approve' },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
+    const data = await readBackendJson(response);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Approve answer error:', error);

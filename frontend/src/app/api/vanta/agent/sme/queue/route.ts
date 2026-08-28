@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readBackendJson } from '../../../../../../lib/proxy';
 
 /**
  * Same-origin proxy for the SME review queue.
@@ -10,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
 
   const target = new URL(`${backendUrl}/api/vanta/agent/sme/queue`);
   for (const key of ['questionnaireId', 'smeUserId', 'status', 'confidence', 'search', 'overdueOnly', 'mine']) {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       cache: 'no-store',
     });
 
-    const data = await response.json();
+    const data = await readBackendJson(response);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Review queue proxy failed:', error);

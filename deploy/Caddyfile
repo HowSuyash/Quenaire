@@ -6,26 +6,31 @@
 {$DOMAIN} {
 	encode gzip
 
-	# The API first: these paths belong to Spring Boot, everything else to Next.
-	handle /api/* {
-		reverse_proxy app:8080
-	}
-
-	# Metrics are for the operator, not the internet. Actuator exposes health,
-	# info and prometheus; none of it should be reachable from outside.
-	handle /api/actuator/* {
-		respond 404
-	}
-
-	handle {
-		reverse_proxy frontend:3000
-	}
-
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		-Server
+	}
+
+	# handle blocks are mutually exclusive and evaluated in the order written,
+	# so this must come before the catch-all below. A bare reverse_proxy
+	# alongside a handle block does not compose that way and would have left
+	# the actuator reachable.
+	handle /api/actuator/* {
+		respond "Not Found" 404
+	}
+
+	# Everything else, including /api, goes to the Next server. Next serves the
+	# route handlers it implements and forwards the rest to the backend (the
+	# rewrite in next.config.js). Splitting /api out to the backend here would
+	# bypass those handlers and send their paths to Spring Boot, which does not
+	# serve them.
+	#
+	# It also means the browser only ever talks to one origin, so there is no
+	# cross-origin request to authorise.
+	handle {
+		reverse_proxy frontend:3000
 	}
 }

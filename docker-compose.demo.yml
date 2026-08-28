@@ -1,0 +1,83 @@
+# A public HTTPS demo, running on your own machine, costing nothing.
+#
+# For showing the product to a prospective design partner on a call. Cloudflare
+# issues a temporary https://<random>.trycloudflare.com address that forwards to
+# the frontend here -- no account, no card, no domain, no ports opened on your
+# router. The address changes every run and disappears when you stop it, which
+# is why this is for demos and docker-compose.deploy.yml is for a real server.
+#
+# Generation runs on your local Ollama, so it costs nothing and takes about
+# twenty seconds a question. Pick five or six questions for a demo rather than
+# loading a ninety-question questionnaire.
+#
+#   docker compose -f docker-compose.demo.yml up -d --build
+#   docker compose -f docker-compose.demo.yml logs cloudflared | grep trycloudflare
+#
+# Requires Ollama running on the host with nomic-embed-text and a chat model.
+
+# Its own project, so `down` here cannot take the development stack with it:
+# Compose derives the project name from the directory otherwise, and every
+# compose file in this repo would share one.
+name: complyai-demo
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: complyai
+      POSTGRES_USER: complyai
+      POSTGRES_PASSWORD: complyai
+    volumes:
+      - demo-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U complyai -d complyai"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:postgresql://postgres:5432/complyai?stringtype=unspecified
+      DATABASE_USER: complyai
+      DATABASE_PASSWORD: complyai
+      # Local generation: free, and slow. The demo is short enough for it.
+      LLM_PROVIDER: ollama
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      # The tunnel address is not known until Cloudflare assigns one, and
+      # nothing in a demo depends on it: the browser stays on one origin.
+      FRONTEND_URL: http://localhost:3000
+      STORAGE_LOCAL_PATH: /var/complyai/storage
+    volumes:
+      - demo-storage:/var/complyai/storage
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        BACKEND_URL: http://app:8080
+    depends_on:
+      - app
+    environment:
+      BACKEND_URL: http://app:8080
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    depends_on:
+      - frontend
+    command: tunnel --no-autoupdate --url http://frontend:3000
+    restart: unless-stopped
+
+volumes:
+  demo-postgres:
+  demo-storage:
