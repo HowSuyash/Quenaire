@@ -24,9 +24,17 @@ COPY . .
 ARG BACKEND_URL=http://app:8080
 ENV BACKEND_URL=$BACKEND_URL
 
-# Offline fixtures are compiled out unless this is "true". Never set it here:
-# the guards exist so a production build cannot serve invented answers.
+# Both of these are compiled out of a production build regardless; they are set
+# explicitly so nothing in the environment can turn them on. The fixtures exist
+# so a production build cannot serve invented compliance answers, and the demo
+# sign-in so a failed login cannot hand out an administrator session.
+# Both the offline fixtures and the demo sign-in are guarded on NODE_ENV as well
+# as their own flag, and `next build` forces NODE_ENV=production -- so neither can
+# be switched on in a built image whatever the environment says. That is the
+# point: a deployed bundle cannot serve invented compliance answers, and a failed
+# login cannot hand out an administrator session. These are belt and braces.
 ENV NEXT_PUBLIC_USE_MOCK_DATA=false
+ENV NEXT_PUBLIC_ALLOW_DEMO_LOGIN=false
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
@@ -55,3 +63,22 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD node -e "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "server.js"]
+
+# ---- development ------------------------------------------------------------
+# Used only by docker-compose.demo.yml. `next dev` leaves NODE_ENV as
+# development, which is the only way the demo sign-in above is reachable -- and
+# the only way to get past the login page while the product has no Keycloak
+# behind it. Never deploy this stage.
+FROM deps AS dev
+
+WORKDIR /app
+
+COPY . .
+
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_ALLOW_DEMO_LOGIN=true
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

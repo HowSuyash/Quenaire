@@ -4,9 +4,14 @@
  * Uses the system Chrome (`channel: 'chrome'`) rather than a downloaded
  * Playwright build, so it works without the ~150MB browser bundle.
  *
+ * Useful for a website, a pitch deck, or showing a prospective design partner
+ * the product without arranging a call.
+ *
  * Usage:  node scripts/capture-screens.mjs [outDir]
- * Needs:  next dev on :3000 (and the API on :8080 for live data;
- *         without it the client falls back to its built-in fixtures).
+ * Needs:  next dev on :3000, the API on :8080, and -- because both the offline
+ *         fixtures and the demo sign-in are off unless asked for --
+ *         NEXT_PUBLIC_ALLOW_DEMO_LOGIN=true and NEXT_PUBLIC_USE_MOCK_DATA=true
+ *         in .env.local if you want screens without real data behind them.
  */
 import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';

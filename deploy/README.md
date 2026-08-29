@@ -73,6 +73,42 @@ curl -sI https://YOUR_DOMAIN
 have validated. The actuator is deliberately not reachable from outside — Caddy
 returns 404 for `/api/actuator/*`.
 
+## Before real users: authentication is not wired up
+
+**This stack cannot sign anyone in.** It is worth stating plainly rather than
+discovering it after a server is running.
+
+Authentication is Keycloak's. The application is an OIDC resource server: it
+validates tokens and never sees a password, and the `users` table has no
+password column. There is no `/api/auth/login` endpoint -- the login page posts
+to one that does not exist. Registration provisions the account in Keycloak,
+not here.
+
+This stack has no Keycloak, so there is no way to obtain a token, and every
+`/api` call answers 401.
+
+Until that is resolved this deployment is good for a landing page and for
+proving the stack runs. It is not ready for a customer. Three ways forward,
+in the order they are worth considering:
+
+1. **Add Keycloak to this compose file** and import a realm defining the
+   `complyai` realm, a public `complyai-frontend` client with this domain in
+   its redirect URIs, and a confidential `complyai-admin` client with the
+   `realm-management` roles the provisioning service needs. This is the
+   architecture the application already expects. It costs about 512MB of RAM
+   and a realm export to get right.
+2. **Use a hosted identity provider** -- Auth0, Clerk, WorkOS -- and point
+   `app.jwt.issuer-uri` at it. Less to run; a bill, and a dependency on their
+   free tier's limits.
+3. **Add password authentication to this application.** Smallest change to
+   deploy, largest to get right: password storage, reset flows, lockout,
+   and the audit obligations that come with holding credentials for a
+   security product.
+
+For showing the product to someone before that is settled, use
+`docker-compose.demo.yml`, which runs on your own machine behind a temporary
+address and enables a local demo session.
+
 ## Things that will bite
 
 **The frontend bakes its API URL in at build time.** `NEXT_PUBLIC_API_URL` is

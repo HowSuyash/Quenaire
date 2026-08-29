@@ -64,6 +64,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      # The development stage, deliberately. Sign-in is Keycloak's, this stack has
+      # no Keycloak, and the users table holds no password -- so without the demo
+      # session there is no way past the login page. That session only exists
+      # while NODE_ENV is development, which `next build` never leaves it as, so
+      # it cannot be turned on in the production image no matter what is set.
+      #
+      # Treat the tunnel address as a shared password: anyone who has it while
+      # the stack is up can sign in. It stops working when you stop the stack.
+      target: dev
       args:
         BACKEND_URL: http://app:8080
     depends_on:

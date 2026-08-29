@@ -9,6 +9,16 @@ import { setToken, setUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { Shield, Lock, AlertCircle } from 'lucide-react';
 
+/**
+ * Whether a demo session may stand in for a real one.
+ *
+ * Compiled out of production builds the same way the offline fixtures are: both operands are
+ * constant at build time, so this branch is not in the deployed bundle at all.
+ */
+const DEMO_LOGIN_ALLOWED =
+  process.env.NODE_ENV !== 'production' &&
+  process.env.NEXT_PUBLIC_ALLOW_DEMO_LOGIN === 'true';
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -47,12 +57,28 @@ export default function LoginPage() {
         setToken(data.accessToken, data.refreshToken);
         setUser(data.user);
         router.push('/dashboard');
-      } else {
-        // Instant seamless login for local development/preview
-        loginAsDemo('ADMIN');
+        return;
       }
+
+      // A failed sign-in used to fall through to loginAsDemo('ADMIN'), so a wrong
+      // password, an account that did not exist, or an unreachable backend all
+      // granted an administrator session. Anyone who found the page was inside.
+      if (DEMO_LOGIN_ALLOWED) {
+        loginAsDemo('ADMIN');
+        return;
+      }
+
+      setError(
+        response && response.status === 401
+          ? 'That email and password do not match an account.'
+          : 'Sign-in is unavailable right now. Please try again shortly.'
+      );
     } catch (err) {
-      loginAsDemo('ADMIN');
+      if (DEMO_LOGIN_ALLOWED) {
+        loginAsDemo('ADMIN');
+        return;
+      }
+      setError('Sign-in is unavailable right now. Please try again shortly.');
     } finally {
       setLoading(false);
     }

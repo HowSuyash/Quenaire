@@ -14,6 +14,7 @@
 package com.complyai.ai.agent;
 
 import com.complyai.domain.questionnaire.vanta.VantaQuestion;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
@@ -57,12 +58,18 @@ public class ConfidenceRouter {
           confidence);
     } else if (confidence >= 60) {
       // Route to SME based on question category
-      UUID smeId = findSMEForCategory(question.getCategory());
-      String smeEmail = smeId != null ? getSMEEmail(smeId) : null;
+      UUID smeId = findSMEForCategory(question.getCategory()).orElse(null);
+      String smeEmail = smeId == null ? null : getSMEEmail(smeId).orElse(null);
 
+      // The reason says what actually happened. It read "routed to SME" while
+      // assigning nobody, so the queue showed questions as handed to an expert
+      // when no one had been given them and no one had been told.
       return new RoutingDecision(
           RouteDecision.SME_QUEUE,
-          String.format("Medium confidence (%d%%) - routed to SME", confidence),
+          smeId == null
+              ? String.format(
+                  "Medium confidence (%d%%) - queued for review, no expert assigned", confidence)
+              : String.format("Medium confidence (%d%%) - routed to SME", confidence),
           smeId,
           smeEmail,
           confidence);
@@ -94,37 +101,39 @@ public class ConfidenceRouter {
     return initial;
   }
 
-  private UUID findSMEForCategory(String category) {
-    // In production, query user database for SME with matching expertise tags
-    // For now, return null to indicate no specific SME found
-    if (category == null) return null;
-
-    String lower = category.toLowerCase();
-    if (lower.contains("crypto") || lower.contains("encryption") || lower.contains("key")) {
-      // return smeRepository.findByExpertiseTag("cryptography");
-    } else if (lower.contains("network") || lower.contains("firewall") || lower.contains("vpn")) {
-      // return smeRepository.findByExpertiseTag("network-security");
-    } else if (lower.contains("privacy") || lower.contains("gdpr") || lower.contains("dpa")) {
-      // return smeRepository.findByExpertiseTag("privacy-law");
-    } else if (lower.contains("incident")
-        || lower.contains("response")
-        || lower.contains("breach")) {
-      // return smeRepository.findByExpertiseTag("incident-response");
-    } else if (lower.contains("access")
-        || lower.contains("mfa")
-        || lower.contains("authentication")) {
-      // return smeRepository.findByExpertiseTag("identity-access");
-    }
-    return null;
+  /**
+   * The subject-matter expert who should answer a question in this category.
+   *
+   * <p>Always empty at present, and deliberately so: assigning a question to a person requires
+   * knowing who on the team knows what, and nothing in the data model records that -- users have a
+   * role (OWNER, ADMIN, MEMBER, VIEWER) and nothing about expertise.
+   *
+   * <p>This used to be a ladder of category checks whose branches were all commented out, so it
+   * read as working routing logic and returned null from every path. Naming the missing piece is
+   * more useful than looking like it does something.
+   *
+   * <p>Implementing it needs a product decision first -- whether expertise is a tag on a user, a
+   * named queue people subscribe to, or simply a rota -- and then a table to hold it.
+   */
+  private Optional<UUID> findSMEForCategory(String category) {
+    return Optional.empty();
   }
 
-  private String getSMEEmail(UUID smeId) {
-    // In production, query user service
-    return null;
+  /** The expert's address, for notifying them. Empty for the same reason as above. */
+  private Optional<String> getSMEEmail(UUID smeId) {
+    return Optional.empty();
   }
 
+  /**
+   * Not implemented.
+   *
+   * <p>The thresholds are compile-time constants. This accepted new values and discarded them, so a
+   * caller changing them saw no error and no change -- worse than not offering the method at all.
+   * Making them configurable means storing them per tenant.
+   */
   public void updateThresholds(int autoApprove, int smeQueue) {
-    // In production, persist to database
+    throw new UnsupportedOperationException(
+        "Confidence thresholds are not configurable yet; they are constants in ConfidenceRouter");
   }
 
   public int getAutoApproveThreshold() {

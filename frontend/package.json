@@ -11,7 +11,8 @@
     "type-check": "tsc --noEmit",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "screenshots": "node scripts/capture-screens.mjs"
   },
   "dependencies": {
     "next": "14.2.0",

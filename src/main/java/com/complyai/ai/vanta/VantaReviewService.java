@@ -15,7 +15,7 @@ package com.complyai.ai.vanta;
 
 import com.complyai.domain.questionnaire.vanta.*;
 import com.complyai.security.TenantContext;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,16 +31,19 @@ public class VantaReviewService {
 
   private final VantaQuestionnaireRepository questionnaireRepository;
   private final VantaQuestionRepository questionRepository;
+  private final VantaQuestionVersionRepository versionRepository;
   private final AnswerLibraryService answerLibraryService;
   private final VantaReasoningEngine reasoningEngine;
 
   public VantaReviewService(
       VantaQuestionnaireRepository questionnaireRepository,
       VantaQuestionRepository questionRepository,
+      VantaQuestionVersionRepository versionRepository,
       AnswerLibraryService answerLibraryService,
       VantaReasoningEngine reasoningEngine) {
     this.questionnaireRepository = questionnaireRepository;
     this.questionRepository = questionRepository;
+    this.versionRepository = versionRepository;
     this.answerLibraryService = answerLibraryService;
     this.reasoningEngine = reasoningEngine;
   }
@@ -103,16 +106,31 @@ public class VantaReviewService {
     // Create version history entry
     createVersionHistory(question, "APPROVED", approvedById);
 
+    // The answer that goes out is the reviewer's if they wrote one, otherwise whatever
+    // is already final, otherwise the model's. This was set unconditionally to the AI
+    // answer, so approving a corrected answer discarded the correction and restored the
+    // text the reviewer had just replaced -- and the final answer is what gets exported
+    // and sent to the customer's vendor.
+    String outgoing =
+        firstPresent(question.getHumanAnswer(), question.getFinalAnswer(), question.getAiAnswer());
+    if (outgoing == null) {
+      throw new IllegalStateException("Cannot approve a question that has no answer");
+    }
+
     question.setStatus(VantaQuestion.QuestionStatus.APPROVED);
-    question.setFinalAnswer(question.getAiAnswer());
+    question.setFinalAnswer(outgoing);
     question.setReviewNotes(reviewNotes);
     question.setReviewedById(approvedById);
     question.setReviewedAt(OffsetDateTime.now());
     question.setApprovedById(approvedById);
     question.setApprovedAt(OffsetDateTime.now());
 
-    // Add to Answer Library for future reuse
-    answerLibraryService.createEntry(question, question.getAiAnswer(), approvedById);
+    // The library stores what was approved, not what the model first said. It was given
+    // getAiAnswer() -- so when a reviewer corrected a wrong answer and approved the
+    // correction, the library learned the wrong one, and reused it on every later
+    // questionnaire that asked the same thing. Reuse of approved answers is the point of
+    // the library; reusing the answer a human rejected is worse than not having one.
+    answerLibraryService.createEntry(question, outgoing, approvedById);
 
     VantaQuestion saved = questionRepository.save(question);
 
@@ -218,48 +236,62 @@ public class VantaReviewService {
     return saved;
   }
 
+  /**
+   * Every recorded change to an answer, newest first.
+   *
+   * <p>This returned an empty list unconditionally while {@link #createVersionHistory} was writing
+   * entries into the question's own metadata column, so the review screen showed no history and the
+   * question's other metadata was being overwritten by it.
+   */
+  @Transactional(readOnly = true)
   public List<QuestionVersionHistory> getVersionHistory(UUID questionId) {
-    // In production, this would query a version history table
-    // For now, return from metadata
-    // Scoped: the id comes from a URL, and findById is not restricted to anything.
-    VantaQuestion question =
-        questionRepository
-            .findByIdAndTenantIdAndDeletedAtIsNull(
-                questionId, TenantContext.requireCurrentTenant().getId())
-            .orElse(null);
-    if (question == null) return new ArrayList<>();
+    UUID tenantId = TenantContext.requireCurrentTenant().getId();
 
-    String historyJson = question.getMetadataJson();
-    // Parse and return history
-    return new ArrayList<>();
+    return versionRepository
+        .findByQuestionIdAndTenantIdAndDeletedAtIsNullOrderByOccurredAtDesc(questionId, tenantId)
+        .stream()
+        .map(
+            version -> {
+              QuestionVersionHistory entry = new QuestionVersionHistory();
+              entry.setAction(version.getAction());
+              entry.setUserId(version.getActorId());
+              entry.setTimestamp(version.getOccurredAt().atOffset(java.time.ZoneOffset.UTC));
+              entry.setPreviousStatus(version.getPreviousStatus());
+              entry.setPreviousAnswer(version.getPreviousAnswer());
+              return entry;
+            })
+        .toList();
   }
 
-  private void createVersionHistory(VantaQuestion question, String action, UUID userId) {
-    Map<String, Object> historyEntry = new HashMap<>();
-    historyEntry.put("action", action);
-    historyEntry.put("userId", userId);
-    historyEntry.put("timestamp", OffsetDateTime.now().toString());
-    historyEntry.put("previousStatus", question.getStatus());
-    historyEntry.put("previousAnswer", question.getFinalAnswer());
-
-    // Store in metadata JSON (in production, use separate history table)
-    List<Map<String, Object>> history = new ArrayList<>();
-    try {
-      String existing = question.getMetadataJson();
-      if (existing != null && !existing.isEmpty()) {
-        history = new ObjectMapper().readValue(existing, List.class);
+  /** First of these that is present and not blank, or null. */
+  private static String firstPresent(String... candidates) {
+    for (String candidate : candidates) {
+      if (candidate != null && !candidate.isBlank()) {
+        return candidate;
       }
-    } catch (Exception e) {
-      log.warn("Failed to parse existing history", e);
     }
+    return null;
+  }
 
-    history.add(0, historyEntry);
-
-    try {
-      question.setMetadataJson(new ObjectMapper().writeValueAsString(history));
-    } catch (Exception e) {
-      log.warn("Failed to serialize history", e);
-    }
+  /**
+   * Records what an answer looked like before this change.
+   *
+   * <p>Written to its own table. It used to be serialised into the question's {@code metadata_json}
+   * as a JSON array, which replaced whatever that column already held -- so recording history
+   * destroyed other data, and nothing read it back afterwards.
+   *
+   * <p>Called before the question is mutated, so the fields here are the outgoing state.
+   */
+  private void createVersionHistory(VantaQuestion question, String action, UUID userId) {
+    VantaQuestionVersion version = new VantaQuestionVersion();
+    version.setTenant(TenantContext.requireCurrentTenant());
+    version.setQuestionId(question.getId());
+    version.setAction(action);
+    version.setActorId(userId);
+    version.setPreviousStatus(question.getStatus());
+    version.setPreviousAnswer(question.getFinalAnswer());
+    version.setOccurredAt(Instant.now());
+    versionRepository.save(version);
   }
 
   @Transactional
