@@ -13,7 +13,6 @@
  */
 package com.complyai.security;
 
-import com.complyai.domain.tenant.Tenant;
 import com.complyai.domain.tenant.TenantRepository;
 import com.complyai.domain.user.User;
 import com.complyai.domain.user.UserRepository;
@@ -23,7 +22,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -33,6 +31,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
@@ -40,7 +40,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
 
   private static final Logger log = LoggerFactory.getLogger(TenantContextFilter.class);
   private static final String TENANT_HEADER = "X-Tenant-ID";
-  private static final String TENANT_SLUG_HEADER = "X-Tenant-Slug";
+  private static final String TENANT_CLAIM = "tenant_id";
 
   private final TenantRepository tenantRepository;
   private final UserRepository userRepository;
@@ -61,62 +61,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
 
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     if (auth instanceof JwtAuthenticationToken jwtAuth) {
-      Jwt jwt = jwtAuth.getToken();
-
-      // Try to get tenant from JWT claims (Keycloak custom claim)
-      String tenantIdClaim = jwt.getClaim("tenant_id");
-      String tenantSlugClaim = jwt.getClaim("tenant_slug");
-
-      UUID tenantId = null;
-
-      if (StringUtils.hasText(tenantIdClaim)) {
-        try {
-          tenantId = UUID.fromString(tenantIdClaim);
-        } catch (IllegalArgumentException e) {
-          log.warn("Invalid tenant_id in JWT: {}", tenantIdClaim);
-        }
-      }
-
-      // Fallback to headers (for API keys, service-to-service)
-      if (tenantId == null) {
-        String headerTenantId = request.getHeader(TENANT_HEADER);
-        if (StringUtils.hasText(headerTenantId)) {
-          try {
-            tenantId = UUID.fromString(headerTenantId);
-          } catch (IllegalArgumentException e) {
-            log.warn("Invalid X-Tenant-ID header: {}", headerTenantId);
-          }
-        }
-      }
-
-      if (tenantId == null && StringUtils.hasText(tenantSlugClaim)) {
-        Optional<Tenant> tenant = tenantRepository.findActiveBySlug(tenantSlugClaim);
-        if (tenant.isPresent()) {
-          tenantId = tenant.get().getId();
-        }
-      }
-
-      if (tenantId == null) {
-        String headerTenantSlug = request.getHeader(TENANT_SLUG_HEADER);
-        if (StringUtils.hasText(headerTenantSlug)) {
-          Optional<Tenant> tenant = tenantRepository.findActiveBySlug(headerTenantSlug);
-          if (tenant.isPresent()) {
-            tenantId = tenant.get().getId();
-          }
-        }
-      }
-
-      final UUID finalTenantId = tenantId;
-      if (finalTenantId != null) {
-        tenantRepository
-            .findById(finalTenantId)
-            .filter(t -> !t.isDeleted())
-            .ifPresentOrElse(
-                t -> TenantContext.setCurrentTenant(t),
-                () -> log.warn("Tenant not found or deleted: {}", finalTenantId));
-      }
-
-      resolveCurrentUser(jwt);
+      resolveTenantAndUser(jwtAuth.getToken());
     }
 
     try {
@@ -127,33 +72,66 @@ public class TenantContextFilter extends OncePerRequestFilter {
   }
 
   /**
-   * Bind the authenticated user to the request so attribution fields record who actually acted. The
-   * JWT subject is the Keycloak id; the user must belong to the resolved tenant or we leave the
-   * context empty rather than trusting a cross-tenant token.
+   * Establishes whose data this request may touch.
+   *
+   * <p>The authoritative answer is the user row: a signed-in user works in their own tenant and
+   * nobody else's. The {@code tenant_id} claim and the {@code X-Tenant-ID} header are, at most,
+   * assertions made by the caller.
+   *
+   * <p>That mattered because the header was being trusted. Tenancy fell back to {@code X-Tenant-ID}
+   * whenever the token carried no {@code tenant_id} claim -- which was always, since no Keycloak
+   * mapper emitted one -- and nothing checked the caller was entitled to the tenant they named. The
+   * user was then refused if it did not match, but only the user: the tenant stayed set, and every
+   * tenant-scoped query in the application ran against it. Any signed-in customer could read
+   * another customer's questionnaires by naming their id in a header.
+   *
+   * <p>A token with no user row is a service account. Those get no tenant here; a background caller
+   * that needs one passes it explicitly to the service it calls.
    */
-  private void resolveCurrentUser(Jwt jwt) {
+  private void resolveTenantAndUser(Jwt jwt) {
     String keycloakId = jwt.getSubject();
     if (!StringUtils.hasText(keycloakId)) {
       return;
     }
 
-    Optional<User> user = userRepository.findByKeycloakId(keycloakId);
-    if (user.isEmpty()) {
-      log.debug("No user row for JWT subject {}", keycloakId);
+    Optional<User> found = userRepository.findByKeycloakId(keycloakId);
+    if (found.isEmpty()) {
+      log.debug("No user row for JWT subject {}; no tenant context established", keycloakId);
       return;
     }
 
-    UUID tenantId = TenantContext.getCurrentTenantId();
-    User resolved = user.get();
-    if (tenantId != null && !tenantId.equals(resolved.getTenantId())) {
-      log.warn(
-          "JWT subject {} belongs to tenant {} but request resolved tenant {}; ignoring user",
-          keycloakId,
-          resolved.getTenantId(),
-          tenantId);
-      return;
+    User user = found.get();
+
+    // If the caller named a tenant, it must be their own. Saying so in the log makes a
+    // probe visible rather than silent.
+    String claimed = jwt.getClaim(TENANT_CLAIM);
+    String header = requestedTenantHeader();
+    for (String assertion : new String[] {claimed, header}) {
+      if (StringUtils.hasText(assertion) && !assertion.equals(String.valueOf(user.getTenantId()))) {
+        log.warn(
+            "JWT subject {} asked for tenant {} but belongs to {}; using their own",
+            keycloakId,
+            assertion,
+            user.getTenantId());
+      }
     }
 
-    TenantContext.setCurrentUser(resolved);
+    tenantRepository
+        .findById(user.getTenantId())
+        .filter(tenant -> !tenant.isDeleted())
+        .ifPresentOrElse(
+            TenantContext::setCurrentTenant,
+            () -> log.warn("User {} belongs to a missing or deleted tenant", keycloakId));
+
+    if (TenantContext.hasTenant()) {
+      TenantContext.setCurrentUser(user);
+    }
+  }
+
+  /** Only read so that a mismatch can be logged; it no longer decides anything. */
+  private String requestedTenantHeader() {
+    ServletRequestAttributes attributes =
+        (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+    return attributes == null ? null : attributes.getRequest().getHeader(TENANT_HEADER);
   }
 }

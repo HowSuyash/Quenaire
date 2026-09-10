@@ -23,6 +23,8 @@ COPY . .
 # calls whatever origin served it.
 ARG BACKEND_URL=http://app:8080
 ENV BACKEND_URL=$BACKEND_URL
+ARG KEYCLOAK_URL=http://keycloak:8080
+ENV KEYCLOAK_URL=$KEYCLOAK_URL
 
 # Both of these are compiled out of a production build regardless; they are set
 # explicitly so nothing in the environment can turn them on. The fixtures exist
@@ -47,6 +49,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
+# Next's standalone server binds to $HOSTNAME, and Docker sets that to the
+# container id -- so it listened only on the container's own address and nothing
+# on loopback could reach it, including this image's own health check.
+ENV HOSTNAME=0.0.0.0
 
 RUN addgroup -g 1001 -S nodejs \
  && adduser -u 1001 -S nextjs -G nodejs
@@ -65,20 +71,3 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 CMD ["node", "server.js"]
 
 # ---- development ------------------------------------------------------------
-# Used only by docker-compose.demo.yml. `next dev` leaves NODE_ENV as
-# development, which is the only way the demo sign-in above is reachable -- and
-# the only way to get past the login page while the product has no Keycloak
-# behind it. Never deploy this stage.
-FROM deps AS dev
-
-WORKDIR /app
-
-COPY . .
-
-ENV NODE_ENV=development
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_PUBLIC_ALLOW_DEMO_LOGIN=true
-
-EXPOSE 3000
-
-CMD ["npm", "run", "dev"]

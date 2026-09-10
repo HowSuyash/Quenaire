@@ -17,6 +17,13 @@ const nextConfig = {
   async rewrites() {
     return [
       {
+        // Keycloak on this app's own origin. The browser has to reach the login
+        // page, and a deployment exposes one address -- so sign-in lives under
+        // /auth here rather than on a second hostname.
+        source: '/auth/:path*',
+        destination: `${process.env.KEYCLOAK_URL || 'http://localhost:8081'}/auth/:path*`,
+      },
+      {
         source: '/api/:path*',
         destination: `${process.env.BACKEND_URL || 'http://localhost:8080'}/api/:path*`,
       },

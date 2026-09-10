@@ -119,6 +119,7 @@ services:
         # Internal address, the same in every deployment. Next bakes rewrite
         # destinations at build time; the public hostname is not among them.
         BACKEND_URL: http://app:8080
+        KEYCLOAK_URL: http://keycloak:8080
     image: complyai-frontend:${TAG:-latest}
     restart: unless-stopped
     depends_on:

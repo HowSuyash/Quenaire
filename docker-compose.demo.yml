@@ -35,12 +35,50 @@ services:
       timeout: 5s
       retries: 10
 
+  # Sign-in. Served under /auth on the frontend's own origin (see the rewrite in
+  # next.config.js) because the demo tunnel exposes one address, and the browser
+  # has to reach the login page. Production does the same through Caddy, so the
+  # shape is the same in both.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HTTP_RELATIVE_PATH: /auth
+      # Behind a proxy that terminates TLS; without this Keycloak builds its
+      # redirect and issuer URLs from the internal http://keycloak:8080.
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: "true"
+      # Health lives on the management port (9000) from Keycloak 25 and is off
+      # until asked for. Without it the readiness probe below has nothing to hit.
+      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      COMPLYAI_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_SECRET:-demo-backend-secret}
+      # A demo tunnel gets a new hostname every run, so the redirect cannot be
+      # pinned here. Deployments name their own domain and nothing else --
+      # a wildcard is how an authorization code ends up somewhere else.
+      COMPLYAI_REDIRECT_URIS: "https://*.trycloudflare.com/*"
+      COMPLYAI_WEB_ORIGINS: "+"
+    volumes:
+      - ./deploy/keycloak/complyai-realm.json:/opt/keycloak/data/import/complyai-realm.json:ro
+      - ./deploy/keycloak/health.sh:/health.sh:ro
+      - keycloak-data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD", "/health.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
       postgres:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -55,6 +93,15 @@ services:
       # nothing in a demo depends on it: the browser stays on one origin.
       FRONTEND_URL: http://localhost:3000
       STORAGE_LOCAL_PATH: /var/complyai/storage
+      # Validation uses the internal address: the token's issuer is the public
+      # one, but the signing keys are fetched server to server.
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/auth/realms/complyai/protocol/openid-connect/certs
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/auth/realms/complyai
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080/auth
+      KEYCLOAK_ADMIN_REALM: complyai
+      KEYCLOAK_ADMIN_CLIENT_ID: complyai-backend
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_BACKEND_SECRET:-demo-backend-secret}
+      KEYCLOAK_REALM: complyai
     volumes:
       - demo-storage:/var/complyai/storage
     extra_hosts:
@@ -64,19 +111,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      # The development stage, deliberately. Sign-in is Keycloak's, this stack has
-      # no Keycloak, and the users table holds no password -- so without the demo
-      # session there is no way past the login page. That session only exists
-      # while NODE_ENV is development, which `next build` never leaves it as, so
-      # it cannot be turned on in the production image no matter what is set.
-      #
-      # Treat the tunnel address as a shared password: anyone who has it while
-      # the stack is up can sign in. It stops working when you stop the stack.
-      target: dev
       args:
         BACKEND_URL: http://app:8080
+        KEYCLOAK_URL: http://keycloak:8080
     depends_on:
       - app
+      - keycloak
     environment:
       BACKEND_URL: http://app:8080
 
@@ -88,5 +128,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  keycloak-data:
   demo-postgres:
   demo-storage:
