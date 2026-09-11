@@ -2,9 +2,9 @@
 
 import Cookies from 'js-cookie';
 
-const TOKEN_KEY = 'complyai_token';
-const REFRESH_TOKEN_KEY = 'complyai_refresh_token';
-const USER_KEY = 'complyai_user';
+const TOKEN_KEY = 'quenaire_token';
+const REFRESH_TOKEN_KEY = 'quenaire_refresh_token';
+const USER_KEY = 'quenaire_user';
 
 export function getToken(): string | undefined {
   if (typeof window === 'undefined') return undefined;

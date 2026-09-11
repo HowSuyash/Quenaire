@@ -15,9 +15,14 @@ COPY gradle/ gradle/
 COPY build.gradle.kts settings.gradle.kts ./
 COPY license-header.txt spotbugs-exclude.xml ./
 
-# Belt and braces: .gitattributes keeps gradlew as LF, but a checkout that
-# predates it would still carry CRLF into the image.
-RUN sed -i 's/$//' gradlew && chmod +x gradlew && ./gradlew --no-daemon dependencies --quiet || true
+# Belt and braces: .gitattributes keeps gradlew as LF and the wrapper is regenerated,
+# but a checkout predating both would still carry CRLF into the image, which /bin/sh
+# cannot parse. Written with an octal escape: a literal backslash-r here was itself
+# turned into a newline by a text tool, which broke this file.
+RUN tr -d '\015' < gradlew > /tmp/gradlew \
+ && mv /tmp/gradlew gradlew \
+ && chmod +x gradlew \
+ && ./gradlew --no-daemon dependencies --quiet || true
 
 COPY src/ src/
 
@@ -39,8 +44,8 @@ COPY --from=builder /app/build/libs/*.jar app.jar
 
 # Uploaded questionnaires and exported PDFs land here; mounted as a volume so
 # they outlive the container.
-RUN mkdir -p /var/complyai/storage \
- && chown -R appuser:appgroup /app /var/complyai
+RUN mkdir -p /var/quenaire/storage \
+ && chown -R appuser:appgroup /app /var/quenaire
 
 USER appuser
 

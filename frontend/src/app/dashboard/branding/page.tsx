@@ -55,7 +55,7 @@ export default function BrandingPage() {
     toast({
       title: domain.trim() ? 'Custom domain saved' : 'Custom domain removed',
       description: domain.trim()
-        ? `Point a CNAME for ${domain.trim()} at your ComplyAI host to finish setup.`
+        ? `Point a CNAME for ${domain.trim()} at your Quenaire host to finish setup.`
         : undefined,
       variant: 'success',
     });
@@ -74,7 +74,7 @@ export default function BrandingPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Branding</h1>
         <p className="text-sm text-gray-500">
-          How ComplyAI presents itself to your team, your vendors and your Trust Center visitors.
+          How Quenaire presents itself to your team, your vendors and your Trust Center visitors.
         </p>
       </div>
 
@@ -188,7 +188,7 @@ export default function BrandingPage() {
                   className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
                 <span>
-                  Hide &ldquo;Powered by ComplyAI&rdquo;
+                  Hide &ldquo;Powered by Quenaire&rdquo;
                   <span className="block text-xs text-gray-500">
                     Available on paid plans. Ignored on the free tier.
                   </span>
@@ -229,7 +229,7 @@ export default function BrandingPage() {
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
                 placeholder="trust.acme.com"
-                helperText="Point a CNAME at your ComplyAI host, then save. One workspace per domain."
+                helperText="Point a CNAME at your Quenaire host, then save. One workspace per domain."
               />
               <Button variant="outline" onClick={saveDomain}>
                 Save domain
@@ -290,7 +290,7 @@ export default function BrandingPage() {
 
                 {!branding.hidePoweredBy && (
                   <div className="border-t border-gray-100 bg-gray-50 px-4 py-2 text-center text-[10px] text-gray-400">
-                    Powered by ComplyAI
+                    Powered by Quenaire
                   </div>
                 )}
               </div>

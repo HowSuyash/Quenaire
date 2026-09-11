@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { QuenaireMark } from '@/components/brand/QuenaireMark';
 import { useParams } from 'next/navigation';
 import { Upload, FileText, AlertCircle, Loader2, Shield, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -275,7 +276,8 @@ export default function IntakePage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 mb-4">
             <Shield className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">ComplyAI</h1>
+          <QuenaireMark className="mx-auto mb-3 h-12 w-12" />
+          <h1 className="text-3xl font-bold text-gray-900">Quenaire</h1>
           <p className="text-gray-500 mt-1">Security Questionnaire Intake Portal</p>
         </div>
 
@@ -487,7 +489,7 @@ export default function IntakePage() {
               <div>
                 <h3 className="font-medium text-blue-900 mb-1">Secure &amp; Private</h3>
                 <p className="text-sm text-blue-700">
-                  Your questionnaire data never leaves your infrastructure. ComplyAI processes
+                  Your questionnaire data never leaves your infrastructure. Quenaire processes
                   everything within your VPC using local LLMs via Ollama. No data is sent to
                   external AI providers.
                 </p>
@@ -500,12 +502,12 @@ export default function IntakePage() {
           <p>
             Powered by{' '}
             <a
-              href="https://complyai.io"
+              href="https://quenaire.io"
               target="_blank"
               rel="noreferrer"
               className="text-primary-600 hover:underline"
             >
-              ComplyAI
+              Quenaire
             </a>
           </p>
           <p>Self-hosted • AI-Powered • Enterprise Ready</p>

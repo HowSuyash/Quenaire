@@ -1,7 +1,7 @@
-// ComplyAI Content Script - Detects and auto-fills security questionnaire forms
+// Quenaire Content Script - Detects and auto-fills security questionnaire forms
 // Works on OneTrust, Whistic, Loopio, CyberGRX, Google Forms, Typeform
 
-class ComplyAIAutofiller {
+class QuenaireAutofiller {
   constructor() {
     this.apiBaseUrl = 'http://localhost:8080/api'; // Configurable via storage
     this.isEnabled = true;
@@ -217,7 +217,7 @@ class ComplyAIAutofiller {
       if (!response.ok) throw new Error('API request failed');
       return await response.json();
     } catch (error) {
-      console.error('ComplyAI: Failed to fetch answer', error);
+      console.error('Quenaire: Failed to fetch answer', error);
       return null;
     }
   }
@@ -294,25 +294,25 @@ class ComplyAIAutofiller {
         return true;
       }
     } catch (e) {
-      console.error('ComplyAI: Error setting value', e);
+      console.error('Quenaire: Error setting value', e);
     }
     return false;
   }
 
   addVisualIndicator(questionElement, answerInput, questionId) {
     // Remove existing indicator
-    const existing = questionElement.querySelector('.complyai-indicator');
+    const existing = questionElement.querySelector('.quenaire-indicator');
     if (existing) existing.remove();
 
     const indicator = document.createElement('div');
-    indicator.className = 'complyai-indicator';
+    indicator.className = 'quenaire-indicator';
     indicator.innerHTML = `
-      <button class="complyai-fill-btn" data-question-id="${questionId}" title="Fill with ComplyAI">
+      <button class="quenaire-fill-btn" data-question-id="${questionId}" title="Fill with Quenaire">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
         </svg>
       </button>
-      <span class="complyai-status">Ready</span>
+      <span class="quenaire-status">Ready</span>
     `;
     indicator.style.cssText = `
       display: inline-flex;
@@ -327,7 +327,7 @@ class ComplyAIAutofiller {
     `;
 
     // Add click handler
-    const btn = indicator.querySelector('.complyai-fill-btn');
+    const btn = indicator.querySelector('.quenaire-fill-btn');
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.fillAndUpdate(questionId, btn);
@@ -343,7 +343,7 @@ class ComplyAIAutofiller {
     
     const success = await this.fillAnswer(questionId);
     
-    const status = button.parentElement.querySelector('.complyai-status');
+    const status = button.parentElement.querySelector('.quenaire-status');
     if (success) {
       button.innerHTML = '✓';
       button.style.background = '#48bb78';
@@ -369,21 +369,21 @@ class ComplyAIAutofiller {
   }
 
   injectSidebar() {
-    if (document.getElementById('complyai-sidebar')) return;
+    if (document.getElementById('quenaire-sidebar')) return;
 
     const sidebar = document.createElement('div');
-    sidebar.id = 'complyai-sidebar';
+    sidebar.id = 'quenaire-sidebar';
     sidebar.innerHTML = `
-      <div class="complyai-sidebar-header">
-        <h3>ComplyAI Auto-Filler</h3>
-        <button id="complyai-close-sidebar">×</button>
+      <div class="quenaire-sidebar-header">
+        <h3>Quenaire Auto-Filler</h3>
+        <button id="quenaire-close-sidebar">×</button>
       </div>
-      <div class="complyai-sidebar-content">
-        <div class="complyai-stats">
-          <span>Questions detected: <strong id="complyai-count">0</strong></span>
+      <div class="quenaire-sidebar-content">
+        <div class="quenaire-stats">
+          <span>Questions detected: <strong id="quenaire-count">0</strong></span>
         </div>
-        <button id="complyai-fill-all" class="complyai-btn primary">Fill All Questions</button>
-        <div id="complyai-questions-list"></div>
+        <button id="quenaire-fill-all" class="quenaire-btn primary">Fill All Questions</button>
+        <div id="quenaire-questions-list"></div>
       </div>
     `;
     sidebar.style.cssText = `
@@ -410,12 +410,12 @@ class ComplyAIAutofiller {
     });
 
     // Event listeners
-    document.getElementById('complyai-close-sidebar').addEventListener('click', () => {
+    document.getElementById('quenaire-close-sidebar').addEventListener('click', () => {
       sidebar.style.transform = 'translateX(100%)';
       setTimeout(() => sidebar.remove(), 300);
     });
 
-    document.getElementById('complyai-fill-all').addEventListener('click', () => {
+    document.getElementById('quenaire-fill-all').addEventListener('click', () => {
       this.fillAllQuestions();
     });
 
@@ -423,8 +423,8 @@ class ComplyAIAutofiller {
   }
 
   updateSidebar() {
-    const countEl = document.getElementById('complyai-count');
-    const listEl = document.getElementById('complyai-questions-list');
+    const countEl = document.getElementById('quenaire-count');
+    const listEl = document.getElementById('quenaire-questions-list');
     
     if (countEl) countEl.textContent = this.detectedQuestions.size;
     
@@ -432,14 +432,14 @@ class ComplyAIAutofiller {
       listEl.innerHTML = '';
       this.detectedQuestions.forEach((q, id) => {
         const item = document.createElement('div');
-        item.className = 'complyai-question-item';
+        item.className = 'quenaire-question-item';
         item.innerHTML = `
-          <div class="complyai-q-text">${q.questionText.substring(0, 80)}...</div>
-          <div class="complyai-q-meta">
-            <span class="complyai-type">${q.type}</span>
-            <span class="complyai-platform">${q.platform}</span>
+          <div class="quenaire-q-text">${q.questionText.substring(0, 80)}...</div>
+          <div class="quenaire-q-meta">
+            <span class="quenaire-type">${q.type}</span>
+            <span class="quenaire-platform">${q.platform}</span>
           </div>
-          <button class="complyai-fill-one" data-id="${id}">Fill</button>
+          <button class="quenaire-fill-one" data-id="${id}">Fill</button>
         `;
         item.style.cssText = `
           padding: 12px;
@@ -450,7 +450,7 @@ class ComplyAIAutofiller {
       });
 
       // Add click handlers
-      listEl.querySelectorAll('.complyai-fill-one').forEach(btn => {
+      listEl.querySelectorAll('.quenaire-fill-one').forEach(btn => {
         btn.addEventListener('click', (e) => {
           this.fillAndUpdate(e.target.dataset.id, e.target);
         });
@@ -463,7 +463,7 @@ class ComplyAIAutofiller {
     let filled = 0;
 
     for (const [id, question] of questions) {
-      const btn = document.querySelector(`.complyai-fill-btn[data-question-id="${id}"]`);
+      const btn = document.querySelector(`.quenaire-fill-btn[data-question-id="${id}"]`);
       if (btn) {
         await this.fillAndUpdate(id, btn);
         filled++;
@@ -471,7 +471,7 @@ class ComplyAIAutofiller {
       }
     }
 
-    alert(`ComplyAI: Filled ${filled} questions!`);
+    alert(`Quenaire: Filled ${filled} questions!`);
   }
 
   generateQuestionId(text) {
@@ -512,11 +512,11 @@ class ComplyAIAutofiller {
   }
 
   /**
-   * Push everything captured on this portal page back into ComplyAI, so the
+   * Push everything captured on this portal page back into Quenaire, so the
    * answers a reviewer approves here land in the answer library rather than
    * living only in the vendor's portal.
    */
-  async submitToComplyAI() {
+  async submitToQuenaire() {
     const questions = this.serializeQuestions();
     const answered = questions.filter(q => q.filled && q.filledAnswer);
 
@@ -551,7 +551,7 @@ class ComplyAIAutofiller {
       });
 
       if (!response.ok) {
-        return { success: false, error: `ComplyAI returned HTTP ${response.status}` };
+        return { success: false, error: `Quenaire returned HTTP ${response.status}` };
       }
 
       const data = await response.json();
@@ -559,10 +559,10 @@ class ComplyAIAutofiller {
         success: true,
         submitted: answered.length,
         questionnaireId: data.questionnaireId || null,
-        message: data.message || `Submitted ${answered.length} answers to ComplyAI.`
+        message: data.message || `Submitted ${answered.length} answers to Quenaire.`
       };
     } catch (error) {
-      return { success: false, error: `Could not reach ComplyAI: ${error.message}` };
+      return { success: false, error: `Could not reach Quenaire: ${error.message}` };
     }
   }
 
@@ -587,8 +587,8 @@ class ComplyAIAutofiller {
           .catch(error => sendResponse({ success: false, error: error.message }));
         return true;
       }
-      if (message.action === 'submitToComplyAI') {
-        this.submitToComplyAI()
+      if (message.action === 'submitToQuenaire') {
+        this.submitToQuenaire()
           .then(result => sendResponse(result))
           .catch(error => sendResponse({ success: false, error: error.message }));
         return true;
@@ -599,18 +599,18 @@ class ComplyAIAutofiller {
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => new ComplyAIAutofiller());
+  document.addEventListener('DOMContentLoaded', () => new QuenaireAutofiller());
 } else {
-  new ComplyAIAutofiller();
+  new QuenaireAutofiller();
 }
 
 // Also handle dynamic content
 const observer = new MutationObserver(() => {
-  if (window.complyaiAutofiller) {
-    window.complyaiAutofiller.detectQuestions();
+  if (window.quenaireAutofiller) {
+    window.quenaireAutofiller.detectQuestions();
   }
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
 // Export for global access
-window.ComplyAIAutofiller = ComplyAIAutofiller;
+window.QuenaireAutofiller = QuenaireAutofiller;

@@ -1,8 +1,8 @@
-# ComplyAI Deployment Guide
+# Quenaire Deployment Guide
 
 ## Overview
 
-This guide covers deploying ComplyAI in production environments using Docker Compose or Kubernetes.
+This guide covers deploying Quenaire in production environments using Docker Compose or Kubernetes.
 
 ## Prerequisites
 
@@ -60,14 +60,14 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 1. Access Keycloak at `https://auth.yourdomain.com`
 2. Login with admin/admin
 3. Import realm from `keycloak/realm-export.json`
-4. Create client `complyai-frontend` with redirect URIs
+4. Create client `quenaire-frontend` with redirect URIs
 5. Copy client secret to `KEYCLOAK_ADMIN_CLIENT_SECRET`
 
 ### 4. Pull LLM Models
 
 ```bash
-docker exec -it complyai-ollama-prod ollama pull llama3.1:8b
-docker exec -it complyai-ollama-prod ollama pull nomic-embed-text
+docker exec -it quenaire-ollama-prod ollama pull llama3.1:8b
+docker exec -it quenaire-ollama-prod ollama pull nomic-embed-text
 ```
 
 ### 5. Verify Deployment
@@ -104,9 +104,9 @@ curl https://app.yourdomain.com
 ### Install with Helm
 
 ```bash
-helm repo add complyai https://charts.complyai.io
-helm install complyai complyai/complyai \
-  --namespace complyai \
+helm repo add quenaire https://charts.quenaire.io
+helm install quenaire quenaire/quenaire \
+  --namespace quenaire \
   --create-namespace \
   --values values-prod.yaml
 ```
@@ -160,7 +160,7 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   tls:
-    - secretName: complyai-tls
+    - secretName: quenaire-tls
       hosts:
         - api.yourdomain.com
         - app.yourdomain.com
@@ -223,10 +223,10 @@ ingress:
 docker-compose -f docker-compose.prod.yml logs -f app
 
 # Database shell
-docker exec -it complyai-postgres-prod psql -U complyai -d complyai
+docker exec -it quenaire-postgres-prod psql -U quenaire -d quenaire
 
 # Run migrations manually
-docker exec complyai-app java -jar app.jar flyway migrate
+docker exec quenaire-app java -jar app.jar flyway migrate
 
 # Check metrics
 curl https://api.yourdomain.com/api/actuator/prometheus

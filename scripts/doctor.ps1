@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Checks everything ComplyAI needs to run, and says exactly what to do about
+  Checks everything Quenaire needs to run, and says exactly what to do about
   whatever is missing.
 
 .DESCRIPTION
@@ -40,7 +40,7 @@ function Test-Port {
 }
 
 Write-Host ""
-Write-Host "ComplyAI environment check" -ForegroundColor Cyan
+Write-Host "Quenaire environment check" -ForegroundColor Cyan
 Write-Host ("-" * 64)
 
 # ---- toolchain -------------------------------------------------------------
@@ -179,8 +179,8 @@ if (Test-Port 11434) {
 
         if ($models.Count -eq 0) {
             Report 'Ollama models' 'fail' 'none pulled' @'
-docker exec -it complyai-ollama ollama pull llama3.2:3b
-    docker exec -it complyai-ollama ollama pull nomic-embed-text
+docker exec -it quenaire-ollama ollama pull llama3.2:3b
+    docker exec -it quenaire-ollama ollama pull nomic-embed-text
 '@
         } else {
             Report 'Ollama models' 'ok' ($models -join ', ')
@@ -188,7 +188,7 @@ docker exec -it complyai-ollama ollama pull llama3.2:3b
             if (-not ($models -match 'nomic-embed-text|mxbai-embed')) {
                 Report 'Embedding model' 'fail' 'missing' @'
 Retrieval cannot work without one:
-    docker exec -it complyai-ollama ollama pull nomic-embed-text
+    docker exec -it quenaire-ollama ollama pull nomic-embed-text
 '@
             }
         }

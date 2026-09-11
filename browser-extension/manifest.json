@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ComplyAI - Security Questionnaire Auto-Filler",
+  "name": "Quenaire - Security Questionnaire Auto-Filler",
   "version": "1.0.0",
-  "description": "Auto-fill security questionnaires on OneTrust, Whistic, Loopio, CyberGRX, Google Forms, and more using ComplyAI's Answer Library",
+  "description": "Auto-fill security questionnaires on OneTrust, Whistic, Loopio, CyberGRX, Google Forms, and more using Quenaire's Answer Library",
   "permissions": [
     "activeTab",
     "storage",
@@ -46,7 +46,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ComplyAI Auto-Filler",
+    "default_title": "Quenaire Auto-Filler",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",

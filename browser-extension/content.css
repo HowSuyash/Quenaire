@@ -1,6 +1,6 @@
-/* ComplyAI Content Script Styles */
+/* Quenaire Content Script Styles */
 
-.complyai-indicator {
+.quenaire-indicator {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
@@ -15,7 +15,7 @@
   z-index: 10000 !important;
 }
 
-.complyai-fill-btn {
+.quenaire-fill-btn {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -30,54 +30,54 @@
   padding: 0 !important;
 }
 
-.complyai-fill-btn:hover:not(:disabled) {
+.quenaire-fill-btn:hover:not(:disabled) {
   background: #4338ca !important;
   transform: scale(1.05) !important;
 }
 
-.complyai-fill-btn:disabled {
+.quenaire-fill-btn:disabled {
   opacity: 0.6 !important;
   cursor: not-allowed !important;
 }
 
-.complyai-fill-btn svg {
+.quenaire-fill-btn svg {
   width: 16px !important;
   height: 16px !important;
 }
 
-.complyai-status {
+.quenaire-status {
   font-size: 11px !important;
   font-weight: 500 !important;
   color: #4a5568 !important;
   white-space: nowrap !important;
 }
 
-.complyai-fill-btn .spinner {
+.quenaire-fill-btn .spinner {
   width: 14px !important;
   height: 14px !important;
   border: 2px solid transparent !important;
   border-top-color: white !important;
   border-radius: 50% !important;
-  animation: complyai-spin 0.8s linear infinite !important;
+  animation: quenaire-spin 0.8s linear infinite !important;
 }
 
-@keyframes complyai-spin {
+@keyframes quenaire-spin {
   to { transform: rotate(360deg); }
 }
 
 /* Question item in sidebar */
-.complyai-question-item {
+.quenaire-question-item {
   padding: 12px !important;
   border-bottom: 1px solid #edf2f7 !important;
   font-size: 13px !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
-.complyai-question-item:last-child {
+.quenaire-question-item:last-child {
   border-bottom: none !important;
 }
 
-.complyai-q-text {
+.quenaire-q-text {
   font-size: 13px !important;
   color: #1a202c !important;
   margin-bottom: 4px !important;
@@ -86,13 +86,13 @@
   text-overflow: ellipsis !important;
 }
 
-.complyai-q-meta {
+.quenaire-q-meta {
   display: flex !important;
   gap: 8px !important;
   font-size: 11px !important;
 }
 
-.complyai-type, .complyai-platform {
+.quenaire-type, .quenaire-platform {
   display: inline-block !important;
   padding: 2px 8px !important;
   border-radius: 9999px !important;
@@ -100,12 +100,12 @@
   font-weight: 600 !important;
 }
 
-.complyai-type {
+.quenaire-type {
   background: #e0e7ff !important;
   color: #3730a3 !important;
 }
 
-.complyai-platform {
+.quenaire-platform {
   background: #fef3c7 !important;
   color: #92400e !important;
 }
@@ -114,7 +114,7 @@
 .confidence-medium { color: #d97706 !important; }
 .confidence-low { color: #dc2626 !important; }
 
-.complyai-fill-one {
+.quenaire-fill-one {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -130,21 +130,21 @@
   transition: all 0.2s !important;
 }
 
-.complyai-fill-one:hover:not(:disabled) {
+.quenaire-fill-one:hover:not(:disabled) {
   background: #4338ca !important;
 }
 
-.complyai-fill-one:disabled {
+.quenaire-fill-one:disabled {
   opacity: 0.6 !important;
   cursor: not-allowed !important;
 }
 
 /* Sidebar styles */
-#complyai-sidebar {
+#quenaire-sidebar {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
-#complyai-sidebar .complyai-sidebar-header {
+#quenaire-sidebar .quenaire-sidebar-header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -153,7 +153,7 @@
   background: white !important;
 }
 
-#complyai-sidebar h3 {
+#quenaire-sidebar h3 {
   font-size: 16px !important;
   font-weight : 600 !important;
   color: #1a202c !important;
@@ -163,7 +163,7 @@
   gap: 8px !important;
 }
 
-#complyai-close-sidebar {
+#quenaire-close-sidebar {
   width: 28px !important;
   height: 28px !important;
   border: none !important;
@@ -178,18 +178,18 @@
   transition: all 0.2s !important;
 }
 
-#complyai-close-sidebar:hover {
+#quenaire-close-sidebar:hover {
   background: #e2e8f0 !important;
   color: #4a5568 !important;
 }
 
-.complyai-sidebar-content {
+.quenaire-sidebar-content {
   flex: 1 !important;
   overflow-y: auto !important;
   padding: 16px !important;
 }
 
-.complyai-stats {
+.quenaire-stats {
   margin-bottom: 16px !important;
   padding: 12px !important;
   background: #f7fafc !important;
@@ -197,11 +197,11 @@
   font-size: 14px !important;
 }
 
-.complyai-stats strong {
+.quenaire-stats strong {
   color: #4f46e5 !important;
 }
 
-.complyai-btn {
+.quenaire-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -216,36 +216,36 @@
   width: 100% !important;
 }
 
-.complyai-btn.primary {
+.quenaire-btn.primary {
   background: #4f46e5 !important;
   color: white !important;
 }
 
-.complyai-btn.primary:hover:not(:disabled) {
+.quenaire-btn.primary:hover:not(:disabled) {
   background: #4338ca !important;
 }
 
-.complyai-btn.primary:disabled {
+.quenaire-btn.primary:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
 }
 
-.complyai-btn.secondary {
+.quenaire-btn.secondary {
   background: #edf2f7 !important;
   color: #4a5568 !important;
 }
 
-.complyai-btn.secondary:hover:not(:disabled) {
+.quenaire-btn.secondary:hover:not(:disabled) {
   background: #e2e8f0 !important;
 }
 
-.complyai-question-item {
+.quenaire-question-item {
   padding: 12px !important;
   border-bottom: 1px solid #edf2f7 !important;
   font-size: 13px !important;
 }
 
-.complyai-q-text {
+.quenaire-q-text {
   font-size: 13px !important;
   color: #1a202c !important;
   margin-bottom: 4px !important;
@@ -254,13 +254,13 @@
   text-overflow: ellipsis !important;
 }
 
-.complyai-q-meta {
+.quenaire-q-meta {
   display: flex !important;
   gap: 8px !important;
   font-size: 11px !important;
 }
 
-.complyai-fill-one {
+.quenaire-fill-one {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -276,11 +276,11 @@
   transition: all 0.2s !important;
 }
 
-.complyai-fill-one:hover:not(:disabled) {
+.quenaire-fill-one:hover:not(:disabled) {
   background: #4338ca !important;
 }
 
-.complyai-fill-one:disabled {
+.quenaire-fill-one:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
 }
@@ -300,7 +300,7 @@
 }
 
 /* Selection highlight */
-.complyai-highlight {
+.quenaire-highlight {
   background: rgba(79, 70, 229, 0.15) !important;
   border: 2px solid #4f46e5 !important;
   border-radius: 4px !important;
@@ -308,7 +308,7 @@
 }
 
 /* Toast notifications */
-.complyai-toast {
+.quenaire-toast {
   position: fixed !important;
   bottom: 24px !important;
   right: 24px !important;
@@ -329,34 +329,34 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
-.complyai-toast.success {
+.quenaire-toast.success {
   border-left: 4px solid #48bb78 !important;
 }
 
-.complyai-toast.error {
+.quenaire-toast.error {
   border-left: 4px solid #f56565 !important;
 }
 
-.complyai-toast.info {
+.quenaire-toast.info {
   border-left: 4px solid #4299e1 !important;
 }
 
-.complyai-toast-content {
+.quenaire-toast-content {
   flex: 1 !important;
 }
 
-.complyai-toast-title {
+.quenaire-toast-title {
   font-weight: 600 !important;
   color: #1a202c !important;
   margin-bottom: 2px !important;
 }
 
-.complyai-toast-message {
+.quenaire-toast-message {
   font-size: 13px !important;
   color: #718096 !important;
 }
 
-.complyai-toast-close {
+.quenaire-toast-close {
   background: none !important;
   border: none !important;
   color: #a0aec0 !important;
@@ -367,12 +367,12 @@
   justify-content: center !important;
 }
 
-.complyai-toast-close:hover {
+.quenaire-toast-close:hover {
   color: #718096 !important;
 }
 
 /* Confidence badges */
-.complyai-confidence-badge {
+.quenaire-confidence-badge {
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
@@ -382,30 +382,30 @@
   font-weight: 600 !important;
 }
 
-.complyai-confidence-badge.high {
+.quenaire-confidence-badge.high {
   background: #dcfce7 !important;
   color: #166534 !important;
 }
 
-.complyai-confidence-badge.medium {
+.quenaire-confidence-badge.medium {
   background: #fef3c7 !important;
   color: #92400e !important;
 }
 
-.complyai-confidence-badge.low {
+.quenaire-confidence-badge.low {
   background: #fee2e2 !important;
   color: #991b1b !important;
 }
 
 /* Selection highlight for questions being filled */
-.complyai-filling {
+.quenaire-filling {
   outline: 2px solid #4f46e5 !important;
   outline-offset: 2px !important;
   transition: outline 0.2s !important;
 }
 
 /* Answer preview tooltip */
-.complyai-tooltip {
+.quenaire-tooltip {
   position: absolute !important;
   top: 100% !important;
   left: 0 !important;
@@ -422,7 +422,7 @@
   word-break: break-word !important;
 }
 
-.complyai-tooltip::before {
+.quenaire-tooltip::before {
   content: '' !important;
   position: absolute !important;
   top: -8px !important;
@@ -432,7 +432,7 @@
 }
 
 /* Citation preview */
-.complyai-citation-preview {
+.quenaire-citation-preview {
   position: fixed !important;
   top: 50% !important;
   left: 50% !important;
@@ -449,7 +449,7 @@
   flex-direction: column !important;
 }
 
-.complyai-citation-header {
+.quenaire-citation-header {
   padding: 16px 24px !important;
   border-bottom: 1px solid #e2e8f0 !important;
   display: flex !important;
@@ -457,13 +457,13 @@
   justify-content: space-between !important;
 }
 
-.complyai-citation-title {
+.quenaire-citation-title {
   font-weight: 600 !important;
   font-size: 16px !important;
   color: #1a202c !important;
 }
 
-.complyai-citation-close {
+.quenaire-citation-close {
   background: none !important;
   border: none !important;
   color: #a0aec0 !important;
@@ -473,36 +473,36 @@
   transition: all 0.2s !important;
 }
 
-.complyai-citation-close:hover {
+.quenaire-citation-close:hover {
   background: #edf2f7 !important;
   color: #718096 !important;
 }
 
-.complyai-citation-body {
+.quenaire-citation-body {
   padding: 24px !important;
   overflow-y: auto !important;
   max-height: 60vh !important;
 }
 
-.complyai-citation-source {
+.quenaire-citation-source {
   margin-bottom: 24px !important;
   padding-bottom: 24px !important;
   border-bottom: 1px solid #e2e8f0 !important;
 }
 
-.complyai-citation-source:last-child {
+.quenaire-citation-source:last-child {
   border-bottom: none !important;
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
 
-.complyai-citation-doc-title {
+.quenaire-citation-doc-title {
   font-weight: 600 !important;
   color: #1a202c !important;
   margin-bottom: 8px !important;
 }
 
-.complyai-citation-meta {
+.quenaire-citation-meta {
   display: flex !important;
   gap: 16px !important;
   font-size: 12px !important;
@@ -510,7 +510,7 @@
   margin-bottom: 12px !important;
 }
 
-.complyai-citation-quote {
+.quenaire-citation-quote {
   background: #f7fafc !important;
   border-left: 3px solid #4f46e5 !important;
   padding: 12px 16px !important;
@@ -520,7 +520,7 @@
   line-height: 1.6 !important;
 }
 
-.complyai-citation-relevance {
+.quenaire-citation-relevance {
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
@@ -534,7 +534,7 @@
 }
 
 /* Overlay for citation modal */
-.complyai-overlay {
+.quenaire-overlay {
   position: fixed !important;
   inset: 0 !important;
   background: rgba(0, 0, 0, 0.5) !important;
@@ -549,12 +549,12 @@
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  #complyai-sidebar {
+  #quenaire-sidebar {
     width: 100% !important;
     max-width: 100% !important;
   }
   
-  .complyai-citation-preview {
+  .quenaire-citation-preview {
     width: 100% !important;
     max-width: 100% !important;
     border-radius: 0 !important;

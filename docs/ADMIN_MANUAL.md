@@ -1,4 +1,4 @@
-# ComplyAI Administrator Manual
+# Quenaire Administrator Manual
 
 ## Table of Contents
 
@@ -149,7 +149,7 @@ Events:
 **Usage:**
 - Questionnaire → Actions → Create Jira Issue
 - Creates parent issue + sub-tasks per question
-- Syncs status changes back to ComplyAI
+- Syncs status changes back to Quenaire
 
 ### Confluence
 
@@ -211,7 +211,7 @@ Events:
   - Review completion
   - Document indexing
 - Interactive approval buttons in Slack
-- `/complyai` slash command for quick actions
+- `/quenaire` slash command for quick actions
 
 ---
 
@@ -358,7 +358,7 @@ Manual backup:
 ### Restore
 
 ```bash
-./scripts/restore.sh /backups/2024/01/15/complyai_daily_20240115_030000.sql.gz complyai_restore
+./scripts/restore.sh /backups/2024/01/15/quenaire_daily_20240115_030000.sql.gz quenaire_restore
 ```
 
 ### Logs
@@ -420,16 +420,16 @@ Centralized in Loki/Grafana:
 
 ```bash
 # Application logs
-docker logs complyai-app -f --tail 100
+docker logs quenaire-app -f --tail 100
 
 # Database queries
-docker exec complyai-postgres-prod psql -U complyai -d complyai -c "SELECT * FROM pg_stat_activity;"
+docker exec quenaire-postgres-prod psql -U quenaire -d quenaire -c "SELECT * FROM pg_stat_activity;"
 
 # Kafka topics
-docker exec complyai-kafka-prod kafka-topics --bootstrap-server localhost:9092 --list
+docker exec quenaire-kafka-prod kafka-topics --bootstrap-server localhost:9092 --list
 
 # Redis info
-docker exec complyai-redis-prod redis-cli -a $REDIS_PASSWORD INFO
+docker exec quenaire-redis-prod redis-cli -a $REDIS_PASSWORD INFO
 
 # Check disk space
 df -h /
@@ -440,10 +440,10 @@ free -h
 
 ### Getting Help
 
-- **Documentation**: https://docs.complyai.io
-- **Support Email**: support@complyai.io
-- **Slack Community**: #complyai-support
-- **Status Page**: status.complyai.io
+- **Documentation**: https://docs.quenaire.io
+- **Support Email**: support@quenaire.io
+- **Slack Community**: #quenaire-support
+- **Status Page**: status.quenaire.io
 
 ---
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# ComplyAI Health Check Script
+# Quenaire Health Check Script
 # Usage: ./healthcheck.sh [--verbose]
 
 set -euo pipefail

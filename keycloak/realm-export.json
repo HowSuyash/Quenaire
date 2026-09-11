@@ -1,8 +1,8 @@
 {
-  "realm": "complyai",
+  "realm": "quenaire",
   "enabled": true,
-  "displayName": "ComplyAI",
-  "displayNameHtml": "<div class=\"kc-logo-text\"><span>ComplyAI</span></div>",
+  "displayName": "Quenaire",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Quenaire</span></div>",
   "registrationAllowed": false,
   "registrationEmailAsUsername": true,
   "rememberMe": true,
@@ -33,9 +33,9 @@
   "oauth2DevicePollingInterval": 5,
   "clients": [
     {
-      "clientId": "complyai-frontend",
-      "name": "ComplyAI Frontend",
-      "description": "Frontend application for ComplyAI",
+      "clientId": "quenaire-frontend",
+      "name": "Quenaire Frontend",
+      "description": "Frontend application for Quenaire",
       "rootUrl": "http://localhost:3000",
       "baseUrl": "http://localhost:3000/",
       "surrogateAuthRequired": false,
@@ -115,9 +115,9 @@
       ]
     },
     {
-      "clientId": "complyai-api",
-      "name": "ComplyAI API",
-      "description": "Backend API for ComplyAI",
+      "clientId": "quenaire-api",
+      "name": "Quenaire API",
+      "description": "Backend API for Quenaire",
       "rootUrl": "http://localhost:8080",
       "baseUrl": "http://localhost:8080/",
       "surrogateAuthRequired": false,
@@ -159,8 +159,8 @@
       ]
     },
     {
-      "clientId": "complyai-admin",
-      "name": "ComplyAI Admin Client",
+      "clientId": "quenaire-admin",
+      "name": "Quenaire Admin Client",
       "description": "Admin client for user provisioning",
       "rootUrl": "http://localhost:8080",
       "baseUrl": "http://localhost:8080/",
@@ -231,35 +231,35 @@
         "description": "Tenant owner with full access",
         "composite": false,
         "clientRole": false,
-        "containerId": "complyai"
+        "containerId": "quenaire"
       },
       {
         "name": "ADMIN",
         "description": "Tenant administrator",
         "composite": false,
         "clientRole": false,
-        "containerId": "complyai"
+        "containerId": "quenaire"
       },
       {
         "name": "MEMBER",
         "description": "Standard team member",
         "composite": false,
         "clientRole": false,
-        "containerId": "complyai"
+        "containerId": "quenaire"
       },
       {
         "name": "VIEWER",
         "description": "Read-only access",
         "composite": false,
         "clientRole": false,
-        "containerId": "complyai"
+        "containerId": "quenaire"
       },
       {
         "name": "API_USER",
         "description": "Service account for API access",
         "composite": false,
         "clientRole": false,
-        "containerId": "complyai"
+        "containerId": "quenaire"
       }
     ],
     "client": {}

@@ -22,12 +22,12 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_DB: complyai_test
-          POSTGRES_USER: complyai
-          POSTGRES_PASSWORD: complyai
+          POSTGRES_DB: quenaire_test
+          POSTGRES_USER: quenaire
+          POSTGRES_PASSWORD: quenaire
         ports: [5432:5432]
         options: >-
-          --health-cmd "pg_isready -U complyai -d complyai_test"
+          --health-cmd "pg_isready -U quenaire -d quenaire_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -93,9 +93,9 @@ jobs:
           # Postgres enum columns and the driver binds enums as varchar,
           # which the server refuses to cast. Without it every integration
           # test that writes a row fails.
-          DATABASE_URL: jdbc:postgresql://localhost:5432/complyai_test?stringtype=unspecified
-          DATABASE_USER: complyai
-          DATABASE_PASSWORD: complyai
+          DATABASE_URL: jdbc:postgresql://localhost:5432/quenaire_test?stringtype=unspecified
+          DATABASE_USER: quenaire
+          DATABASE_PASSWORD: quenaire
 
       - name: Run Integration Tests
         run: ./gradlew integrationTest --no-daemon
@@ -105,9 +105,9 @@ jobs:
           # Postgres enum columns and the driver binds enums as varchar,
           # which the server refuses to cast. Without it every integration
           # test that writes a row fails.
-          DATABASE_URL: jdbc:postgresql://localhost:5432/complyai_test?stringtype=unspecified
-          DATABASE_USER: complyai
-          DATABASE_PASSWORD: complyai
+          DATABASE_URL: jdbc:postgresql://localhost:5432/quenaire_test?stringtype=unspecified
+          DATABASE_USER: quenaire
+          DATABASE_PASSWORD: quenaire
 
       # A skipped test is not a passing test. The pipeline tests skip themselves
       # when no language model is reachable, and CI has none -- so the run that
@@ -198,7 +198,7 @@ jobs:
         uses: dependency-check/Dependency-Check_Action@main
         id: depcheck
         with:
-          project: 'ComplyAI'
+          project: 'Quenaire'
           path: '.'
           format: 'HTML'
           out: 'reports'

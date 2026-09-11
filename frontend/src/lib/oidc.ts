@@ -11,13 +11,13 @@
  * deployment needs one hostname rather than two.
  */
 
-const VERIFIER_KEY = 'complyai_pkce_verifier';
-const STATE_KEY = 'complyai_oidc_state';
+const VERIFIER_KEY = 'quenaire_pkce_verifier';
+const STATE_KEY = 'quenaire_oidc_state';
 
-export const REALM_PATH = '/auth/realms/complyai/protocol/openid-connect';
+export const REALM_PATH = '/auth/realms/quenaire/protocol/openid-connect';
 
 function clientId(): string {
-  return process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'complyai-frontend';
+  return process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'quenaire-frontend';
 }
 
 function redirectUri(): string {

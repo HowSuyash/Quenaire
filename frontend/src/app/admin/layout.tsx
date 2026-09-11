@@ -20,7 +20,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-900">
                 <ShieldCheck className="h-4 w-4 text-white" />
               </span>
-              <span className="font-semibold text-gray-900">ComplyAI Platform</span>
+              <span className="font-semibold text-gray-900">Quenaire Platform</span>
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-600">
                 Operator
               </span>

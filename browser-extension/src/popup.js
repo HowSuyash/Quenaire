@@ -1,4 +1,4 @@
-// ComplyAI Popup Controller
+// Quenaire Popup Controller
 
 class PopupController {
   constructor() {
@@ -19,7 +19,7 @@ class PopupController {
       await chrome.sidePanel.open({ windowId: window_.id });
       window.close();
     });
-    document.getElementById('btnSubmit').addEventListener('click', () => this.submitToComplyAI());
+    document.getElementById('btnSubmit').addEventListener('click', () => this.submitToQuenaire());
     document.getElementById('linkOptions').addEventListener('click', (e) => {
       e.preventDefault();
       chrome.runtime.openOptionsPage();
@@ -74,7 +74,7 @@ class PopupController {
     this.updateConnectionStatus(true);
   }
 
-  async submitToComplyAI() {
+  async submitToQuenaire() {
     const btn = document.getElementById('btnSubmit');
     const original = btn.innerHTML;
     btn.disabled = true;
@@ -84,7 +84,7 @@ class PopupController {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) throw new Error('No active tab');
 
-      const result = await chrome.tabs.sendMessage(tab.id, { action: 'submitToComplyAI' });
+      const result = await chrome.tabs.sendMessage(tab.id, { action: 'submitToQuenaire' });
 
       if (result?.success) {
         btn.innerHTML = `Submitted ${result.submitted}`;
@@ -92,12 +92,12 @@ class PopupController {
       } else {
         btn.innerHTML = 'Submit failed';
         btn.style.background = '#f56565';
-        console.warn('ComplyAI submit failed:', result?.error);
+        console.warn('Quenaire submit failed:', result?.error);
       }
     } catch (error) {
       btn.innerHTML = 'Submit failed';
       btn.style.background = '#f56565';
-      console.error('ComplyAI submit failed:', error);
+      console.error('Quenaire submit failed:', error);
     }
 
     setTimeout(() => {

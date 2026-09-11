@@ -13,9 +13,9 @@ spring:
     #   character varying
     # stringtype=unspecified lets the server infer the type from the target
     # column. It also covers the same problem on jsonb columns.
-    url: jdbc:postgresql://localhost:5432/complyai?stringtype=unspecified
-    username: complyai
-    password: complyai
+    url: jdbc:postgresql://localhost:5432/quenaire?stringtype=unspecified
+    username: quenaire
+    password: quenaire
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -79,7 +79,7 @@ app:
 
 logging:
   level:
-    com.complyai.ai: DEBUG
+    com.quenaire.ai: DEBUG
     org.flywaydb: INFO
     # Retrieval and generation timings — the numbers that set the pricing floor.
-    com.complyai.ai.llm: DEBUG
+    com.quenaire.ai.llm: DEBUG

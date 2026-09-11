@@ -1,10 +1,10 @@
-package com.complyai.ai.vanta;
+package com.quenaire.ai.vanta;
 
-import com.complyai.ai.vanta.VantaSpreadsheetParserService.ParsedQuestionnaire;
-import com.complyai.ai.vanta.VantaSpreadsheetParserService.ParsedSheet;
-import com.complyai.ai.vanta.VantaSpreadsheetParserService.ParsedQuestion;
-import com.complyai.domain.questionnaire.vanta.VantaQuestion;
-import com.complyai.domain.questionnaire.vanta.VantaQuestionnaire;
+import com.quenaire.ai.vanta.VantaSpreadsheetParserService.ParsedQuestionnaire;
+import com.quenaire.ai.vanta.VantaSpreadsheetParserService.ParsedSheet;
+import com.quenaire.ai.vanta.VantaSpreadsheetParserService.ParsedQuestion;
+import com.quenaire.domain.questionnaire.vanta.VantaQuestion;
+import com.quenaire.domain.questionnaire.vanta.VantaQuestionnaire;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;

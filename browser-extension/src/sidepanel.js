@@ -1,4 +1,4 @@
-// ComplyAI Side Panel Controller
+// Quenaire Side Panel Controller
 
 const DEFAULT_API_BASE = 'http://localhost:8080/api';
 const AUTO_REFRESH_MS = 15000;
@@ -29,7 +29,7 @@ class SidePanelController {
 
   bindEvents() {
     document.getElementById('btnFillAll').addEventListener('click', () => this.fillAll());
-    document.getElementById('btnSubmit').addEventListener('click', () => this.submitToComplyAI());
+    document.getElementById('btnSubmit').addEventListener('click', () => this.submitToQuenaire());
     document.getElementById('btnRefresh').addEventListener('click', () => this.refreshData());
     document.getElementById('btnSaveSettings').addEventListener('click', () => this.saveSettings());
 
@@ -194,7 +194,7 @@ class SidePanelController {
     await this.refreshData();
   }
 
-  async submitToComplyAI() {
+  async submitToQuenaire() {
     const btn = document.getElementById('btnSubmit');
     const result = document.getElementById('submitResult');
     const original = btn.innerHTML;
@@ -207,7 +207,7 @@ class SidePanelController {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) throw new Error('No active tab');
 
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'submitToComplyAI' });
+      const response = await chrome.tabs.sendMessage(tab.id, { action: 'submitToQuenaire' });
 
       if (response?.success) {
         result.style.color = '#38a169';
@@ -248,7 +248,7 @@ class SidePanelController {
 
   showNoTabMessage() {
     this.showPlaceholder(
-      'Please navigate to a questionnaire page (OneTrust, Whistic, Loopio, etc.) to use ComplyAI.'
+      'Please navigate to a questionnaire page (OneTrust, Whistic, Loopio, etc.) to use Quenaire.'
     );
     this.updateConnectionStatus(false);
   }

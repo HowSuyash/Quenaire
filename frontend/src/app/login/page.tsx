@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { beginLogin } from '@/lib/oidc';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
-import { Shield, Lock, AlertCircle } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
+import { QuenaireMark } from '@/components/brand/QuenaireMark';
 
 /**
  * Sign-in.
@@ -35,10 +36,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 mb-4">
-            <Shield className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">ComplyAI</h1>
+          <QuenaireMark className="mx-auto mb-4 h-16 w-16" />
+          <h1 className="text-3xl font-bold text-gray-900">Quenaire</h1>
           <p className="text-gray-500 mt-1">Security Questionnaire Automation</p>
         </div>
 
@@ -61,7 +60,7 @@ export default function LoginPage() {
             </Button>
 
             <p className="text-center text-sm text-gray-500">
-              Your password is handled by the identity provider, never by ComplyAI.
+              Your password is handled by the identity provider, never by Quenaire.
             </p>
 
             <p className="text-center text-sm text-gray-500">

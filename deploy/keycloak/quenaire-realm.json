@@ -1,0 +1,117 @@
+{
+  "realm": "quenaire",
+  "enabled": true,
+  "displayName": "Quenaire",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "verifyEmail": false,
+  "sslRequired": "external",
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "bruteForceProtected": true,
+  "failureFactor": 10,
+  "waitIncrementSeconds": 60,
+  "passwordPolicy": "length(12) and notUsername(undefined) and notEmail(undefined)",
+  "roles": {
+    "realm": [
+      {
+        "name": "OWNER",
+        "description": "Owns the workspace and its billing"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Administers the workspace"
+      },
+      {
+        "name": "REVIEWER",
+        "description": "Reviews and approves answers"
+      },
+      {
+        "name": "SME",
+        "description": "Answers questions delegated to them"
+      },
+      {
+        "name": "VIEWER",
+        "description": "Read-only access"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "quenaire-backend",
+      "name": "Quenaire backend",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "secret": "${QUENAIRE_BACKEND_CLIENT_SECRET}",
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "quenaire-frontend",
+      "name": "Quenaire web",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "redirectUris": [
+        "${QUENAIRE_REDIRECT_URIS}"
+      ],
+      "webOrigins": [
+        "${QUENAIRE_WEB_ORIGINS}"
+      ],
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "smtpServer": {},
+  "users": [
+    {
+      "username": "service-account-quenaire-backend",
+      "enabled": true,
+      "serviceAccountClientId": "quenaire-backend",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "query-users",
+          "view-realm"
+        ]
+      }
+    }
+  ]
+}

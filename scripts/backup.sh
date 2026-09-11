@@ -1,5 +1,5 @@
 #!/bin/bash
-# ComplyAI Database Backup Script
+# Quenaire Database Backup Script
 # Usage: ./backup.sh [daily|weekly|monthly]
 
 set -euo pipefail
@@ -8,8 +8,8 @@ set -euo pipefail
 BACKUP_TYPE="${1:-daily}"
 DB_HOST="${DB_HOST:-postgres}"
 DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-complyai}"
-DB_USER="${DB_USER:-complyai}"
+DB_NAME="${DB_NAME:-quenaire}"
+DB_USER="${DB_USER:-quenaire}"
 DB_PASSWORD="${DB_PASSWORD}"
 BACKUP_DIR="${BACKUP_DIR:-/backups}"
 RETENTION_DAILY=7
@@ -59,7 +59,7 @@ if PGPASSWORD="${DB_PASSWORD}" pg_dump \
     # Upload to S3 if configured
     if [[ -n "${S3_BUCKET}" ]]; then
         log "Uploading to S3..."
-        if aws s3 cp "${BACKUP_PATH}" "s3://${S3_BUCKET}/complyai/backups/${DATE_DIR}/${BACKUP_FILE}" \
+        if aws s3 cp "${BACKUP_PATH}" "s3://${S3_BUCKET}/quenaire/backups/${DATE_DIR}/${BACKUP_FILE}" \
             --region "${AWS_REGION}" \
             --storage-class STANDARD_IA; then
             log "Upload to S3 completed"
@@ -76,7 +76,7 @@ if PGPASSWORD="${DB_PASSWORD}" pg_dump \
         daily)
             find "${BACKUP_DIR}" -name "${DB_NAME}_daily_*.sql.gz" -mtime +${RETENTION_DAILY} -delete
             if [[ -n "${S3_BUCKET}" ]]; then
-                aws s3 ls "s3://${S3_BUCKET}/complyai/backups/" --recursive | \
+                aws s3 ls "s3://${S3_BUCKET}/quenaire/backups/" --recursive | \
                     grep "_daily_" | \
                     awk '{print $4}' | \
                     while read -r key; do

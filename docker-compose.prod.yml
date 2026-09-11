@@ -5,20 +5,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: complyai-app
+    container_name: quenaire-app
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DATABASE_URL: jdbc:postgresql://postgres:5432/complyai
-      DATABASE_USER: complyai
+      DATABASE_URL: jdbc:postgresql://postgres:5432/quenaire
+      DATABASE_USER: quenaire
       DATABASE_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      KEYCLOAK_ISSUER_URI: https://auth.yourdomain.com/realms/complyai
-      KEYCLOAK_JWK_SET_URI: https://auth.yourdomain.com/realms/complyai/protocol/openid-connect/certs
+      KEYCLOAK_ISSUER_URI: https://auth.yourdomain.com/realms/quenaire
+      KEYCLOAK_JWK_SET_URI: https://auth.yourdomain.com/realms/quenaire/protocol/openid-connect/certs
       KEYCLOAK_ADMIN_URL: https://auth.yourdomain.com
-      KEYCLOAK_ADMIN_CLIENT_ID: complyai-admin
+      KEYCLOAK_ADMIN_CLIENT_ID: quenaire-admin
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_SECRET}
       OLLAMA_BASE_URL: http://ollama:11434
       STORAGE_TYPE: s3
@@ -33,7 +33,7 @@ services:
       # Monitoring
       MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED: "true"
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
-      MANAGEMENT_METRICS_TAGS_APPLICATION: "complyai"
+      MANAGEMENT_METRICS_TAGS_APPLICATION: "quenaire"
     ports:
       - "8080:8080"
     depends_on:
@@ -58,15 +58,15 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: complyai-postgres-prod
+    container_name: quenaire-postgres-prod
     environment:
-      POSTGRES_DB: complyai
-      POSTGRES_USER: complyai
+      POSTGRES_DB: quenaire
+      POSTGRES_USER: quenaire
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U complyai -d complyai"]
+      test: ["CMD-SHELL", "pg_isready -U quenaire -d quenaire"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -83,7 +83,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: complyai-redis-prod
+    container_name: quenaire-redis-prod
     command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_prod_data:/data
@@ -101,7 +101,7 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
-    container_name: complyai-kafka-prod
+    container_name: quenaire-kafka-prod
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -134,7 +134,7 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
-    container_name: complyai-zookeeper-prod
+    container_name: quenaire-zookeeper-prod
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -152,7 +152,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: complyai-ollama-prod
+    container_name: quenaire-ollama-prod
     volumes:
       - ollama_prod_data:/root/.ollama
     environment:
@@ -181,7 +181,7 @@ services:
   # Monitoring Stack
   prometheus:
     image: prom/prometheus:v2.47.0
-    container_name: complyai-prometheus
+    container_name: quenaire-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -200,7 +200,7 @@ services:
 
   grafana:
     image: grafana/grafana:10.1.0
-    container_name: complyai-grafana
+    container_name: quenaire-grafana
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
@@ -222,7 +222,7 @@ services:
 
   loki:
     image: grafana/loki:2.9.0
-    container_name: complyai-loki
+    container_name: quenaire-loki
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./monitoring/loki.yaml:/etc/loki/local-config.yaml:ro
@@ -237,7 +237,7 @@ services:
 
   promtail:
     image: grafana/promtail:2.9.0
-    container_name: complyai-promtail
+    container_name: quenaire-promtail
     volumes:
       - ./monitoring/promtail.yaml:/etc/promtail/config.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro

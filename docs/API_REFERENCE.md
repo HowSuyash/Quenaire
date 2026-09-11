@@ -1,8 +1,8 @@
-# ComplyAI API Reference
+# Quenaire API Reference
 
 ## Overview
 
-The ComplyAI API provides programmatic access to all platform features for automating security questionnaire workflows.
+The Quenaire API provides programmatic access to all platform features for automating security questionnaire workflows.
 
 ## Base URL
 
@@ -539,7 +539,7 @@ GET /api/billing/invoices?page=0&size=10
 POST /api/webhooks
 Content-Type: application/json
 {
-  "url": "https://your-app.com/webhooks/complyai",
+  "url": "https://your-app.com/webhooks/quenaire",
   "events": [
     "questionnaire.created",
     "questionnaire.processed",
@@ -605,13 +605,13 @@ GET /api/v3/api-docs
 
 ### JavaScript/TypeScript
 ```bash
-npm install @complyai/api-client
+npm install @quenaire/api-client
 ```
 
 ```typescript
-import { ComplyAIClient } from '@complyai/api-client';
+import { QuenaireClient } from '@quenaire/api-client';
 
-const client = new ComplyAIClient({
+const client = new QuenaireClient({
   baseUrl: 'https://api.yourdomain.com/api',
   apiKey: 'your-api-key'
 });
@@ -621,13 +621,13 @@ const questionnaires = await client.questionnaires.list();
 
 ### Python
 ```bash
-pip install complyai-client
+pip install quenaire-client
 ```
 
 ```python
-from complyai import ComplyAIClient
+from quenaire import QuenaireClient
 
-client = ComplyAIClient(
+client = QuenaireClient(
     base_url='https://api.yourdomain.com/api',
     api_key='your-api-key'
 )
@@ -648,6 +648,6 @@ questionnaires = client.questionnaires.list()
 
 ## Support
 
-- API Status: https://status.complyai.io
-- Documentation: https://docs.complyai.io
-- Support: api-support@complyai.io
+- API Status: https://status.quenaire.io
+- Documentation: https://docs.quenaire.io
+- Support: api-support@quenaire.io

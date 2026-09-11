@@ -297,8 +297,8 @@ export default async function TrustCenterPage({ params }: PageProps) {
           )}
           <p>
             Trust Center powered by{' '}
-            <a href="https://complyai.io" target="_blank" rel="noreferrer" className="hover:underline">
-              ComplyAI
+            <a href="https://quenaire.io" target="_blank" rel="noreferrer" className="hover:underline">
+              Quenaire
             </a>
           </p>
         </div>

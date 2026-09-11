@@ -1,4 +1,4 @@
-// ComplyAI Background Service Worker
+// Quenaire Background Service Worker
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
@@ -12,7 +12,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
     // Open welcome page
     chrome.tabs.create({
-      url: 'https://complyai.io/welcome'
+      url: 'https://quenaire.io/welcome'
     });
   }
 });
@@ -117,7 +117,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       chrome.action.setBadgeText({ text: '●', tabId });
       chrome.action.setBadgeBackgroundColor({ color: '#4f46e5', tabId });
       chrome.action.setTitle({ 
-        title: 'ComplyAI: Questionnaire detected. Click to open.', 
+        title: 'Quenaire: Questionnaire detected. Click to open.', 
         tabId 
       });
     } else {
@@ -151,8 +151,8 @@ chrome.action.onClicked.addListener((tab) => {
 // Context menu for right-click fill
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
-    id: 'complyai-fill',
-    title: 'Fill with ComplyAI',
+    id: 'quenaire-fill',
+    title: 'Fill with Quenaire',
     contexts: ['editable', 'selection'],
     documentUrlPatterns: [
       '*://*.onetrust.com/*',
@@ -166,7 +166,7 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'complyai-fill' && tab.id) {
+  if (info.menuItemId === 'quenaire-fill' && tab.id) {
     chrome.tabs.sendMessage(tab.id, { 
       action: 'fillSelection',
       selectionText: info.selectionText
@@ -186,4 +186,4 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 // Keep service worker alive
-chrome.runtime.setUninstallURL('https://complyai.io/uninstall');
+chrome.runtime.setUninstallURL('https://quenaire.io/uninstall');

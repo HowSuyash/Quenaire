@@ -1,4 +1,4 @@
-# Deploying ComplyAI
+# Deploying Quenaire
 
 One server runs everything: Postgres, the API, the frontend, Ollama for
 embeddings, and Caddy for TLS. Generation is hosted, so the server does not need
@@ -22,7 +22,7 @@ You need four things, and three of them are yours to get:
 
 | Thing | Where from |
 |---|---|
-| A domain, e.g. `app.complyai.in` | Any registrar. An A record pointing at the server's static IP. |
+| A domain, e.g. `app.quenaire.in` | Any registrar. An A record pointing at the server's static IP. |
 | An AWS account with a Lightsail instance in ap-south-1 | aws.amazon.com |
 | An Anthropic API key | console.anthropic.com — this is what pays for generation |
 | A Postgres password | `openssl rand -base64 32` on the server |
@@ -43,8 +43,8 @@ them.
 sudo apt update && sudo apt install -y docker.io docker-compose-v2 git
 sudo usermod -aG docker $USER && newgrp docker
 
-git clone https://github.com/HowSuyash/ComplyAI.git
-cd ComplyAI/complyai
+git clone https://github.com/HowSuyash/Quenaire.git
+cd Quenaire/quenaire
 
 cp .env.deploy.example .env
 nano .env          # fill in every value; DB_PASSWORD from `openssl rand -base64 32`
@@ -92,8 +92,8 @@ proving the stack runs. It is not ready for a customer. Three ways forward,
 in the order they are worth considering:
 
 1. **Add Keycloak to this compose file** and import a realm defining the
-   `complyai` realm, a public `complyai-frontend` client with this domain in
-   its redirect URIs, and a confidential `complyai-admin` client with the
+   `quenaire` realm, a public `quenaire-frontend` client with this domain in
+   its redirect URIs, and a confidential `quenaire-admin` client with the
    `realm-management` roles the provisioning service needs. This is the
    architecture the application already expects. It costs about 512MB of RAM
    and a realm export to get right.
@@ -137,7 +137,7 @@ questionnaire loses its sources.
 
 ```sh
 docker compose -f docker-compose.deploy.yml exec -T postgres \
-  pg_dump -U complyai complyai | gzip > complyai-$(date +%F).sql.gz
+  pg_dump -U quenaire quenaire | gzip > quenaire-$(date +%F).sql.gz
 ```
 
 Restoring a database without the matching document volume produces citations

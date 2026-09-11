@@ -1,0 +1,15 @@
+<!-- Quenaire, standalone: favicon, slide, README. Colours are fixed here because
+     this file is used outside the app, where no theme is available. No width or
+     height, so it scales to whatever it is placed in. -->
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Quenaire</title>
+  <path d="M24 4.5 5.5 10.4v12.2C5.5 31.6 12.9 39.4 24 43.2c3.1-1.1 5.9-2.5 8.3-4.3"
+        stroke="#17385C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#2680F5">
+    <rect x="12" y="14.5" width="16.5" height="4.2" rx="2.1"/>
+    <rect x="12" y="22" width="10.5" height="4.2" rx="2.1"/>
+  </g>
+  <path d="M15.5 30.5 21.5 36.5 38 14" stroke="#2680F5" stroke-width="4.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="24" cy="46" r="2.6" fill="#17385C"/>
+</svg>

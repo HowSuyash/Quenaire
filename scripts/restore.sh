@@ -1,21 +1,21 @@
 #!/bin/bash
-# ComplyAI Database Restore Script
+# Quenaire Database Restore Script
 # Usage: ./restore.sh <backup_file> [target_db]
 
 set -euo pipefail
 
 # Configuration
 BACKUP_FILE="${1}"
-TARGET_DB="${2:-complyai}"
+TARGET_DB="${2:-quenaire}"
 DB_HOST="${DB_HOST:-postgres}"
 DB_PORT="${DB_PORT:-5432}"
-DB_USER="${DB_USER:-complyai}"
+DB_USER="${DB_USER:-quenaire}"
 DB_PASSWORD="${DB_PASSWORD}"
 
 # Validation
 if [[ -z "${BACKUP_FILE}" ]]; then
     echo "Usage: $0 <backup_file> [target_db]"
-    echo "Example: $0 /backups/2024/01/15/complyai_daily_20240115_030000.sql.gz complyai_restore"
+    echo "Example: $0 /backups/2024/01/15/quenaire_daily_20240115_030000.sql.gz quenaire_restore"
     exit 1
 fi
 

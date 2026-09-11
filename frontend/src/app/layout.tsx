@@ -6,8 +6,12 @@ import { QueryProvider } from '@/lib/query-provider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'ComplyAI - Security Questionnaire Automation',
-  description: 'Automate security questionnaire responses using RAG and LLMs. Self-hosted, enterprise-ready.',
+  title: 'Quenaire - Security Questionnaire Automation',
+  description:
+    'Answer security questionnaires from your own documentation, with citations back to the source.',
+  // The SVG scales to whatever size a browser or a bookmark asks for, so there is one
+  // file rather than a set of pre-rendered PNGs to keep in step.
+  icons: { icon: '/logo.svg' },
 };
 
 export default function RootLayout({

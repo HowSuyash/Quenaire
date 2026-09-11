@@ -1,6 +1,6 @@
-# ComplyAI Frontend
+# Quenaire Frontend
 
-React/Next.js frontend for the ComplyAI Security Questionnaire Automation platform.
+React/Next.js frontend for the Quenaire Security Questionnaire Automation platform.
 
 ## Features
 
@@ -154,8 +154,8 @@ Copy `.env.example` to `.env.local` and configure:
 ```env
 BACKEND_URL=http://localhost:8080
 NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8081
-NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=complyai-frontend
-NEXT_PUBLIC_KEYCLOAK_REALM=complyai
+NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=quenaire-frontend
+NEXT_PUBLIC_KEYCLOAK_REALM=quenaire
 ```
 
 The browser talks only to this app's own origin. Requests to `/api` that this

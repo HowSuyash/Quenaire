@@ -1,4 +1,4 @@
--- ComplyAI PostgreSQL Initialization Script
+-- Quenaire PostgreSQL Initialization Script
 -- Creates the keycloak database and user required by Keycloak container
 
 -- Create keycloak user

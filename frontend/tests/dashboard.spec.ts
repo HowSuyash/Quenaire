@@ -15,7 +15,7 @@ test.describe('Questionnaire Management', () => {
   test('should show create questionnaire button on list page', async ({ page }) => {
     // This would need auth
     await page.goto('/login');
-    await expect(page.locator('text=ComplyAI')).toBeVisible();
+    await expect(page.locator('text=Quenaire')).toBeVisible();
   });
 });
 

@@ -1,4 +1,4 @@
-# ComplyAI - AI-Powered Security Questionnaire Automation
+# Quenaire - AI-Powered Security Questionnaire Automation
 
 Enterprise-grade SaaS for automating security questionnaire responses using RAG and LLMs. Built for self-hosted deployment with full data sovereignty.
 
@@ -41,14 +41,14 @@ docker-compose up -d
 
 ### 2. Pull LLM Models (in another terminal)
 ```bash
-docker exec -it complyai-ollama ollama pull llama3.1:8b
-docker exec -it complyai-ollama ollama pull nomic-embed-text
+docker exec -it quenaire-ollama ollama pull llama3.1:8b
+docker exec -it quenaire-ollama ollama pull nomic-embed-text
 ```
 
 ### 3. Configure Keycloak
 1. Open http://localhost:8081/admin (admin/admin)
-2. Realm `complyai` is pre-imported
-3. Create client `complyai-frontend` → copy client secret
+2. Realm `quenaire` is pre-imported
+3. Create client `quenaire-frontend` → copy client secret
 4. Create user with `OWNER` role
 
 ### 4. Run Application
@@ -64,8 +64,8 @@ docker exec -it complyai-ollama ollama pull nomic-embed-text
 ## 📁 Project Structure
 
 ```
-src/main/java/com/complyai/
-├── ComplyAiApplication.java
+src/main/java/com/quenaire/
+├── QuenaireApplication.java
 ├── config/                 # Configuration classes
 ├── security/               # Security, JWT, Multi-tenancy
 ├── domain/
@@ -97,8 +97,8 @@ Key environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL JDBC URL | `jdbc:postgresql://localhost:5432/complyai` |
-| `KEYCLOAK_ISSUER_URI` | Keycloak realm URL | `http://localhost:8081/realms/complyai` |
+| `DATABASE_URL` | PostgreSQL JDBC URL | `jdbc:postgresql://localhost:5432/quenaire` |
+| `KEYCLOAK_ISSUER_URI` | Keycloak realm URL | `http://localhost:8081/realms/quenaire` |
 | `OLLAMA_BASE_URL` | Ollama API endpoint | `http://localhost:11434` |
 | `OLLAMA_MODEL` | Generation model | `llama3.1:8b` |
 | `OLLAMA_EMBEDDING_MODEL` | Embedding model | `nomic-embed-text` |
@@ -125,7 +125,7 @@ Key environment variables:
 ./gradlew bootJar
 
 # Build Docker image
-docker build -t complyai:latest .
+docker build -t quenaire:latest .
 
 # Run in production mode
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d

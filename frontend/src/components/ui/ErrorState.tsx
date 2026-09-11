@@ -30,7 +30,7 @@ export function ErrorState({ title, action, detail, onRetry }: ErrorStateProps) 
 
       <p className="mt-1 max-w-md text-sm text-red-800">
         {detail ??
-          `The ComplyAI API could not be reached${action ? ` while trying to ${action}` : ''}. ` +
+          `The Quenaire API could not be reached${action ? ` while trying to ${action}` : ''}. ` +
             'Nothing is shown rather than showing data that might be wrong.'}
       </p>
 

@@ -1,6 +1,6 @@
 spring:
   application:
-    name: complyai
+    name: quenaire
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   datasource:
@@ -10,9 +10,9 @@ spring:
     #   character varying
     # stringtype=unspecified lets the server infer the type from the target
     # column. It also covers the same problem on jsonb columns.
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/complyai?stringtype=unspecified}
-    username: ${DATABASE_USER:complyai}
-    password: ${DATABASE_PASSWORD:complyai}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/quenaire?stringtype=unspecified}
+    username: ${DATABASE_USER:quenaire}
+    password: ${DATABASE_PASSWORD:quenaire}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -50,7 +50,7 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
-      group-id: complyai
+      group-id: quenaire
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -103,7 +103,7 @@ management:
 
 logging:
   level:
-    com.complyai: DEBUG
+    com.quenaire: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
@@ -116,14 +116,14 @@ app:
   # marketing landing page; every product route lives on this origin.
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
   jwt:
-    issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/complyai}
-    jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8081/realms/complyai/protocol/openid-connect/certs}
+    issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/quenaire}
+    jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8081/realms/quenaire/protocol/openid-connect/certs}
   keycloak:
     admin-url: ${KEYCLOAK_ADMIN_URL:http://localhost:8081}
     admin-realm: ${KEYCLOAK_ADMIN_REALM:master}
-    admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:complyai-admin}
+    admin-client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:quenaire-admin}
     admin-client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
-    realm: ${KEYCLOAK_REALM:complyai}
+    realm: ${KEYCLOAK_REALM:quenaire}
   ollama:
     base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
     model: ${OLLAMA_MODEL:llama3.1:8b}

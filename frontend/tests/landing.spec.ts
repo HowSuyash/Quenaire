@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Landing Page', () => {
   test('should load landing page', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle(/ComplyAI/);
+    await expect(page).toHaveTitle(/Quenaire/);
     await expect(page.locator('h1')).toContainText('Automate Security Questionnaires');
   });
 
@@ -48,6 +48,6 @@ test.describe('Dashboard', () => {
     // This test would need actual auth setup
     // For now, just verify the login page works
     await page.goto('/login');
-    await expect(page.locator('text=ComplyAI')).toBeVisible();
+    await expect(page.locator('text=Quenaire')).toBeVisible();
   });
 });

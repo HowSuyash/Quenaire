@@ -12,25 +12,25 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: complyai-postgres
+    container_name: quenaire-postgres
     environment:
-      POSTGRES_DB: complyai
-      POSTGRES_USER: complyai
-      POSTGRES_PASSWORD: complyai
+      POSTGRES_DB: quenaire
+      POSTGRES_USER: quenaire
+      POSTGRES_PASSWORD: quenaire
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U complyai -d complyai"]
+      test: ["CMD-SHELL", "pg_isready -U quenaire -d quenaire"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   ollama:
     image: ollama/ollama:latest
-    container_name: complyai-ollama
+    container_name: quenaire-ollama
     ports:
       - "11434:11434"
     volumes:

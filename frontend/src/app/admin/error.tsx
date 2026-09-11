@@ -27,7 +27,7 @@ export default function AdminError({
         title="Something went wrong"
         detail={
           error.name === 'ApiUnavailableError'
-            ? 'The ComplyAI API could not be reached. Check that the backend is running, then try again.'
+            ? 'The Quenaire API could not be reached. Check that the backend is running, then try again.'
             : error.message || 'An unexpected error occurred.'
         }
         onRetry={reset}

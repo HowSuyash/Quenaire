@@ -2,7 +2,7 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'complyai-prod'
+    cluster: 'quenaire-prod'
     environment: 'production'
 
 alerting:
@@ -24,7 +24,7 @@ scrape_configs:
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'complyai-app'
+        replacement: 'quenaire-app'
 
   - job_name: 'postgres'
     static_configs:
@@ -32,7 +32,7 @@ scrape_configs:
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'complyai-postgres'
+        replacement: 'quenaire-postgres'
 
   - job_name: 'redis'
     static_configs:
@@ -40,7 +40,7 @@ scrape_configs:
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'complyai-redis'
+        replacement: 'quenaire-redis'
 
   - job_name: 'kafka'
     static_configs:
@@ -48,7 +48,7 @@ scrape_configs:
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'complyai-kafka'
+        replacement: 'quenaire-kafka'
 
   - job_name: 'ollama'
     static_configs:
@@ -56,7 +56,7 @@ scrape_configs:
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'complyai-ollama'
+        replacement: 'quenaire-ollama'
 
   - job_name: 'node-exporter'
     static_configs:

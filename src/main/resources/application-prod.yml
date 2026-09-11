@@ -82,7 +82,7 @@ management:
 logging:
   level:
     root: WARN
-    com.complyai: ${LOG_LEVEL:INFO}
+    com.quenaire: ${LOG_LEVEL:INFO}
     # Both of these are DEBUG/TRACE in the base configuration. Left on in
     # production they write every statement and every bound parameter -- tenant
     # names, document text, credentials -- to disk in plain text.
@@ -118,7 +118,7 @@ app:
   storage:
     type: ${STORAGE_TYPE:local}
     local:
-      path: ${STORAGE_LOCAL_PATH:/var/complyai/storage}
+      path: ${STORAGE_LOCAL_PATH:/var/quenaire/storage}
 
   signup:
     enabled: ${SIGNUP_ENABLED:true}

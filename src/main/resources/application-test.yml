@@ -76,5 +76,5 @@ app:
 logging:
   level:
     root: WARN
-    com.complyai: INFO
+    com.quenaire: INFO
     org.flywaydb: WARN

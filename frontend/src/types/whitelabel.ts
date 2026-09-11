@@ -13,7 +13,7 @@ export interface Branding {
 }
 
 export const DEFAULT_BRANDING: Branding = {
-  productName: 'ComplyAI',
+  productName: 'Quenaire',
   primaryColor: '#2563EB',
   accentColor: '#7C3AED',
   logoUrl: null,

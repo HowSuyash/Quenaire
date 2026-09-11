@@ -9,7 +9,7 @@ plugins {
     id("com.github.spotbugs") version "6.0.19"
 }
 
-group = "com.complyai"
+group = "com.quenaire"
 version = "0.0.1-SNAPSHOT"
 // A toolchain, not just sourceCompatibility: the latter sets -source/-target but leaves the
 // build running on whatever JDK launched Gradle. That difference is not cosmetic -- Mockito's
@@ -149,9 +149,9 @@ spotless {
 }
 
 flyway {
-    url = "jdbc:postgresql://localhost:5432/complyai"
-    user = "complyai"
-    password = "complyai"
+    url = "jdbc:postgresql://localhost:5432/quenaire"
+    user = "quenaire"
+    password = "quenaire"
     locations = arrayOf("classpath:db/migration")
     baselineOnMigrate = true
 }

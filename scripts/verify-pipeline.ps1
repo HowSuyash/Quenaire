@@ -19,7 +19,7 @@ $ErrorActionPreference = 'Stop'
 $Ollama    = 'http://localhost:11434'
 $EmbedModel = 'nomic-embed-text'
 $ChatModel  = 'llama3.2:3b'
-$Container  = 'complyai-postgres'
+$Container  = 'quenaire-postgres'
 
 function Step { param([string]$Text) Write-Host "`n$Text" -ForegroundColor Cyan }
 function Pass { param([string]$Text) Write-Host "  PASS  $Text" -ForegroundColor Green }
@@ -32,7 +32,7 @@ function Invoke-Sql {
     # harmless psql NOTICE would abort the script under ErrorActionPreference=Stop.
     # Notices are silenced at the source instead.
     $quiet = "SET client_min_messages = warning; $Sql"
-    docker exec $Container psql -U complyai -d complyai -tAq -v ON_ERROR_STOP=1 -c $quiet
+    docker exec $Container psql -U quenaire -d quenaire -tAq -v ON_ERROR_STOP=1 -c $quiet
 }
 
 function Get-Embedding {
@@ -48,7 +48,7 @@ function To-VectorLiteral {
     '[' + (($Vector | ForEach-Object { $_.ToString([System.Globalization.CultureInfo]::InvariantCulture) }) -join ',') + ']'
 }
 
-Write-Host "ComplyAI pipeline verification" -ForegroundColor Cyan
+Write-Host "Quenaire pipeline verification" -ForegroundColor Cyan
 Write-Host ("=" * 64)
 
 # --- prerequisites -----------------------------------------------------------
@@ -64,7 +64,7 @@ try {
 }
 
 if ($models -match $EmbedModel) { Pass "embedding model: $EmbedModel" }
-else { Fail "missing $EmbedModel  ->  docker exec complyai-ollama ollama pull $EmbedModel"; exit 1 }
+else { Fail "missing $EmbedModel  ->  docker exec quenaire-ollama ollama pull $EmbedModel"; exit 1 }
 
 $haveChat = [bool]($models -match [regex]::Escape($ChatModel))
 if ($haveChat) { Pass "generation model: $ChatModel" }

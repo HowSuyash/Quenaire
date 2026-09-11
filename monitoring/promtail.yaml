@@ -11,7 +11,7 @@ clients:
 scrape_configs:
   - job_name: docker-containers
     static_labels:
-      cluster: complyai-prod
+      cluster: quenaire-prod
       environment: production
     pipeline_stages:
       - json:
@@ -39,11 +39,11 @@ scrape_configs:
         refresh_interval: 5s
         filters:
           - name: label
-            values: ["com.docker.compose.project=complyai"]
+            values: ["com.docker.compose.project=quenaire"]
 
   - job_name: system-logs
     static_labels:
-      cluster: complyai-prod
+      cluster: quenaire-prod
       environment: production
     static_configs:
       - targets:
@@ -54,7 +54,7 @@ scrape_configs:
 
   - job_name: application-logs
     static_labels:
-      cluster: complyai-prod
+      cluster: quenaire-prod
       environment: production
       component: application
     static_configs:

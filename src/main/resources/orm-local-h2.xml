@@ -22,7 +22,7 @@
                                      https://jakarta.ee/xml/ns/persistence/orm/orm_3_0.xsd"
                  version="3.0">
 
-    <entity class="com.complyai.domain.document.Document">
+    <entity class="com.quenaire.domain.document.Document">
         <attributes>
             <basic name="embedding">
                 <column name="embedding" column-definition="VARBINARY"/>
@@ -30,7 +30,7 @@
         </attributes>
     </entity>
 
-    <entity class="com.complyai.domain.document.DocumentChunk">
+    <entity class="com.quenaire.domain.document.DocumentChunk">
         <attributes>
             <basic name="embedding">
                 <column name="embedding" column-definition="VARBINARY"/>

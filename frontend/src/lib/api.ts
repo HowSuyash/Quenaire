@@ -57,7 +57,7 @@ export class ApiUnavailableError extends Error {
   readonly operation: string;
 
   constructor(operation: string, cause?: unknown) {
-    super(`Could not reach the ComplyAI API while running "${operation}".`);
+    super(`Could not reach the Quenaire API while running "${operation}".`);
     this.name = 'ApiUnavailableError';
     this.operation = operation;
     if (cause !== undefined) (this as { cause?: unknown }).cause = cause;
@@ -73,7 +73,7 @@ function requireMockData(operation: string, cause?: unknown): void {
     throw new ApiUnavailableError(operation, cause);
   }
   console.warn(
-    `[complyai] Serving OFFLINE FIXTURE for "${operation}". This is not real data.`
+    `[quenaire] Serving OFFLINE FIXTURE for "${operation}". This is not real data.`
   );
 }
 

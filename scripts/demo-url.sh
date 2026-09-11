@@ -16,8 +16,8 @@ export MSYS_NO_PATHCONV
 
 compose="docker compose -f docker-compose.demo.yml"
 kcadm="/opt/keycloak/bin/kcadm.sh"
-realm=complyai
-client=complyai-frontend
+realm=quenaire
+client=quenaire-frontend
 
 printf 'waiting for the tunnel to be assigned an address'
 url=''

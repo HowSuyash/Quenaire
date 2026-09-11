@@ -327,7 +327,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">No API keys created yet</p>
-                  <p className="text-sm text-gray-500">Create an API key to access ComplyAI programmatically</p>
+                  <p className="text-sm text-gray-500">Create an API key to access Quenaire programmatically</p>
                 </div>
                 <Button variant="outline">
                   <Plus className="h-4 w-4 mr-2" />

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { QuenaireMark } from '@/components/brand/QuenaireMark';
 import { useRouter as useNextRouter } from 'next/navigation';
 import { isAuthenticated, getUser, removeToken } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -87,10 +88,8 @@ export default function DashboardLayout({
         >
           <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
-                <LayoutDashboard className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">ComplyAI</span>
+              <QuenaireMark className="h-8 w-8" />
+              <span className="text-xl font-bold text-gray-900">Quenaire</span>
             </Link>
             <button
               className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100"
