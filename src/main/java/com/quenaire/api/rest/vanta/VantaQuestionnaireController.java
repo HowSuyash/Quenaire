@@ -15,6 +15,8 @@ package com.quenaire.api.rest.vanta;
 
 import com.quenaire.ai.vanta.VantaQuestionnaireService;
 import com.quenaire.ai.vanta.VantaReviewService;
+import com.quenaire.api.rest.vanta.dto.QuestionResponse;
+import com.quenaire.api.rest.vanta.dto.QuestionnaireResponse;
 import com.quenaire.domain.questionnaire.vanta.VantaQuestion;
 import com.quenaire.domain.questionnaire.vanta.VantaQuestionnaire;
 import com.quenaire.security.TenantContext;
@@ -89,7 +91,7 @@ public class VantaQuestionnaireController {
 
     return ResponseEntity.ok(
         Map.of(
-            "items", result.getContent(),
+            "items", result.getContent().stream().map(QuestionnaireResponse::of).toList(),
             "page", result.getNumber(),
             "size", result.getSize(),
             "totalElements", result.getTotalElements(),
@@ -97,9 +99,10 @@ public class VantaQuestionnaireController {
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<VantaQuestionnaire> getQuestionnaire(@PathVariable UUID id) {
+  public ResponseEntity<QuestionnaireResponse> getQuestionnaire(@PathVariable UUID id) {
     return questionnaireService
         .getQuestionnaire(id)
+        .map(QuestionnaireResponse::of)
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound().build());
   }
@@ -133,7 +136,7 @@ public class VantaQuestionnaireController {
             "success",
             true,
             "questionnaire",
-            processed,
+            QuestionnaireResponse.of(processed),
             "stats",
             Map.of(
                 "totalQuestions", processed.getTotalQuestions(),
@@ -165,15 +168,16 @@ public class VantaQuestionnaireController {
   }
 
   @GetMapping("/{id}/questions")
-  public ResponseEntity<List<VantaQuestion>> getQuestions(@PathVariable UUID id) {
-    List<VantaQuestion> questions = questionnaireService.getQuestions(id);
-    return ResponseEntity.ok(questions);
+  public ResponseEntity<List<QuestionResponse>> getQuestions(@PathVariable UUID id) {
+    return ResponseEntity.ok(
+        questionnaireService.getQuestions(id).stream().map(QuestionResponse::of).toList());
   }
 
   @GetMapping("/questions/{questionId}")
-  public ResponseEntity<VantaQuestion> getQuestion(@PathVariable UUID questionId) {
+  public ResponseEntity<QuestionResponse> getQuestion(@PathVariable UUID questionId) {
     return questionnaireService
         .getQuestion(questionId)
+        .map(QuestionResponse::of)
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound().build());
   }

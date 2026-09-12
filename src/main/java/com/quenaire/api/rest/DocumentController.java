@@ -14,6 +14,7 @@
 package com.quenaire.api.rest;
 
 import com.quenaire.ai.ingestion.DocumentIngestionService;
+import com.quenaire.api.rest.dto.DocumentResponse;
 import com.quenaire.domain.document.Document;
 import com.quenaire.domain.document.DocumentRepository;
 import com.quenaire.domain.document.DocumentStatus;
@@ -43,28 +44,28 @@ public class DocumentController {
 
   @PostMapping(consumes = "multipart/form-data")
   @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'MEMBER')")
-  public ResponseEntity<Document> upload(
+  public ResponseEntity<DocumentResponse> upload(
       @RequestParam("file") MultipartFile file,
       @RequestParam(value = "sourceType", defaultValue = "UPLOAD") String sourceType)
       throws IOException {
 
     Document document = ingestionService.ingest(file, sourceType);
-    return ResponseEntity.ok(document);
+    return ResponseEntity.ok(DocumentResponse.of(document));
   }
 
   @PostMapping("/text")
   @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'MEMBER')")
-  public ResponseEntity<Document> ingestText(@RequestBody TextIngestRequest request) {
+  public ResponseEntity<DocumentResponse> ingestText(@RequestBody TextIngestRequest request) {
 
     Document document =
         ingestionService.ingestText(
             request.title(), request.content(), request.mimeType(), request.sourceType());
-    return ResponseEntity.ok(document);
+    return ResponseEntity.ok(DocumentResponse.of(document));
   }
 
   @GetMapping
   @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'MEMBER', 'VIEWER')")
-  public ResponseEntity<Page<Document>> list(
+  public ResponseEntity<Page<DocumentResponse>> list(
       @RequestParam(required = false) DocumentStatus status, Pageable pageable) {
 
     TenantContext.requireTenant();
@@ -76,17 +77,18 @@ public class DocumentController {
                 tenantId, status, pageable)
             : documentRepository.findByTenantIdAndDeletedAtIsNull(tenantId, pageable);
 
-    return ResponseEntity.ok(documents);
+    return ResponseEntity.ok(documents.map(DocumentResponse::of));
   }
 
   @GetMapping("/{id}")
   @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'MEMBER', 'VIEWER')")
-  public ResponseEntity<Document> get(@PathVariable UUID id) {
+  public ResponseEntity<DocumentResponse> get(@PathVariable UUID id) {
     TenantContext.requireTenant();
     UUID tenantId = TenantContext.getCurrentTenantId();
 
     return documentRepository
         .findByIdAndTenantIdAndDeletedAtIsNull(id, tenantId)
+        .map(DocumentResponse::of)
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound().build());
   }
