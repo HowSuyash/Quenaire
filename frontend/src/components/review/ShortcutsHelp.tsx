@@ -35,7 +35,7 @@ export function ShortcutsHelp({ bindings, open, onClose }: ShortcutsHelpProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-lg p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-600"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
@@ -45,7 +45,7 @@ export function ShortcutsHelp({ bindings, open, onClose }: ShortcutsHelpProps) {
         <div className="max-h-[60vh] overflow-y-auto px-6 py-4 space-y-5">
           {Object.entries(groups).map(([group, items]) => (
             <div key={group}>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
                 {group}
               </h3>
               <ul className="space-y-1.5">

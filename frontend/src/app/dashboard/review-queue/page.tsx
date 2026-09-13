@@ -468,7 +468,7 @@ export default function ReviewQueuePage() {
 
       {/* Queue */}
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-gray-400">
+        <div className="flex items-center justify-center py-20 text-gray-600">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : items.length === 0 ? (

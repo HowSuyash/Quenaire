@@ -177,10 +177,13 @@ public class ReviewQueueService {
       items.add(toQueueItem(question, assignment, smeProfiles, questionnaireTitles, citations));
     }
 
-    items = applyItemFilters(items, filter);
-    items.sort(queueOrdering());
+    // Sorted through the stream rather than in place: applyItemFilters ends in
+    // .toList(), which is immutable, so List.sort on its result threw
+    // UnsupportedOperationException and the review queue failed to load at all.
+    List<QueueItem> ordered =
+        applyItemFilters(items, filter).stream().sorted(queueOrdering()).toList();
 
-    return new QueueResponse(items, buildStats(tenantId, items));
+    return new QueueResponse(ordered, buildStats(tenantId, ordered));
   }
 
   private List<VantaQuestion> loadCandidateQuestions(UUID tenantId, QueueFilter filter) {

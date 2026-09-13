@@ -194,7 +194,7 @@ export function QuestionCard({
             ) : (
               <>
                 <div className="prose prose-sm max-w-none bg-gray-50 p-4 rounded-lg border border-gray-100 min-h-[100px]">
-                  {displayContent || <span className="text-gray-400 italic">No answer yet</span>}
+                  {displayContent || <span className="text-gray-600 italic">No answer yet</span>}
                 </div>
                 <div className="flex items-center gap-3">
                   {answerStatus === 'APPROVED' ? (

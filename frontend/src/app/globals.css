@@ -10,8 +10,9 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    /* #2680f5, the blue in the mark. Was the scaffold default indigo. */
-    --primary: 215 91% 55%;
+    /* #1a63cc: the mark's blue darkened to 5.67:1 against white, so text and
+       buttons built on it meet WCAG AA. The mark itself keeps #2680f5. */
+    --primary: 217 78% 45%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;

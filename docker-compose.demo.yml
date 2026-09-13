@@ -119,6 +119,12 @@ services:
       - keycloak
     environment:
       BACKEND_URL: http://app:8080
+    # Published so the demo is reachable at http://localhost:3000 whether or not
+    # the tunnel is up -- Cloudflare tears these tunnels down after a while, and
+    # waiting for a new address just to check something is wasted time. Bound to
+    # loopback, so this does not put the demo on the local network.
+    ports:
+      - "127.0.0.1:3000:3000"
 
   cloudflared:
     image: cloudflare/cloudflared:latest

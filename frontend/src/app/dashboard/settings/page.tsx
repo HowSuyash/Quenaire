@@ -183,7 +183,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-4">
                     <span className="text-3xl">{integration.icon}</span>
                     <div>
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle as="h2" className="flex items-center gap-2">
                         {integration.name}
                         {isConfigured && (
                           <Badge variant="success" className="flex items-center gap-1">
@@ -262,7 +262,7 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>General Settings</CardTitle>
+              <CardTitle as="h2">General Settings</CardTitle>
               <CardDescription>Configure application-wide settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -320,7 +320,7 @@ export default function SettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>API Access</CardTitle>
+              <CardTitle as="h2">API Access</CardTitle>
               <CardDescription>Manage API keys for programmatic access</CardDescription>
             </CardHeader>
             <CardContent>

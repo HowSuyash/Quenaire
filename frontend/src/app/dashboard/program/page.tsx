@@ -96,7 +96,7 @@ export default function ProgramPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24 text-gray-400">
+      <div className="flex items-center justify-center py-24 text-gray-600">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -176,7 +176,7 @@ export default function ProgramPage() {
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <CardTitle>Control coverage</CardTitle>
+                <CardTitle as="h2">Control coverage</CardTitle>
                 <CardDescription>
                   {selected.coveredControls} of {selected.totalControls} controls have live evidence
                 </CardDescription>
@@ -260,7 +260,7 @@ export default function ProgramPage() {
       {/* Raw signals */}
       <Card>
         <CardHeader>
-          <CardTitle>Observed evidence</CardTitle>
+          <CardTitle as="h2">Observed evidence</CardTitle>
           <CardDescription>
             Facts pulled from connected systems, newest first. Each is dated so an answer built
             on it can be qualified.
@@ -280,7 +280,7 @@ export default function ProgramPage() {
 
                 return (
                   <li key={signal.id} className="flex items-start gap-3 py-3">
-                    <SourceIcon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                    <SourceIcon className="mt-0.5 h-4 w-4 shrink-0 text-gray-600" />
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -303,7 +303,7 @@ export default function ProgramPage() {
                         <p className="mt-0.5 text-sm text-gray-600">{signal.detail}</p>
                       )}
 
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="mt-1 text-xs text-gray-600">
                         {signal.source} · observed {formatRelativeTime(signal.observedAt)}
                         {signal.sourceUrl && (
                           <>

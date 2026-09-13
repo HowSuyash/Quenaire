@@ -63,7 +63,7 @@ export default function BrandingPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24 text-gray-400">
+      <div className="flex items-center justify-center py-24 text-gray-600">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -82,7 +82,7 @@ export default function BrandingPage() {
         <div className="space-y-6 lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle as="h2" className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
                 Identity
               </CardTitle>
@@ -108,6 +108,7 @@ export default function BrandingPage() {
                       aria-label="Pick primary color"
                     />
                     <Input
+                      aria-label="Primary colour, hex value"
                       value={branding.primaryColor}
                       onChange={(e) => set('primaryColor', e.target.value)}
                       error={primaryValid ? undefined : 'Must be a hex color'}
@@ -126,6 +127,7 @@ export default function BrandingPage() {
                       aria-label="Pick accent color"
                     />
                     <Input
+                      aria-label="Accent colour, hex value"
                       value={branding.accentColor}
                       onChange={(e) => set('accentColor', e.target.value)}
                       error={accentValid ? undefined : 'Must be a hex color'}
@@ -160,7 +162,7 @@ export default function BrandingPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Documents &amp; support</CardTitle>
+              <CardTitle as="h2">Documents &amp; support</CardTitle>
               <CardDescription>Applied to PDF exports and error states</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -215,7 +217,7 @@ export default function BrandingPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle as="h2" className="flex items-center gap-2">
                 <Globe className="h-5 w-5" />
                 Custom domain
               </CardTitle>
@@ -242,7 +244,7 @@ export default function BrandingPage() {
         <div>
           <Card className="sticky top-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle as="h2" className="flex items-center gap-2">
                 <Eye className="h-5 w-5" />
                 Preview
               </CardTitle>
@@ -289,7 +291,7 @@ export default function BrandingPage() {
                 </div>
 
                 {!branding.hidePoweredBy && (
-                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-2 text-center text-[10px] text-gray-400">
+                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-2 text-center text-[10px] text-gray-600">
                     Powered by Quenaire
                   </div>
                 )}

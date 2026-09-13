@@ -173,7 +173,7 @@ export function LeadCaptureForm({ slug, cta, requestableItems, accentColor }: Le
         )}
       </Button>
 
-      <p className="mt-3 text-center text-xs text-gray-400">
+      <p className="mt-3 text-center text-xs text-gray-600">
         We use your details only to respond to this request.
       </p>
     </form>

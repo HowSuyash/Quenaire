@@ -112,7 +112,7 @@ export default function AnalyticsPage() {
 
   if (loading || !data) {
     return (
-      <div className="flex items-center justify-center py-24 text-gray-400">
+      <div className="flex items-center justify-center py-24 text-gray-600">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -211,7 +211,7 @@ export default function AnalyticsPage() {
             {roi.assumptions.reviewMinutesPerQuestion} min to review an AI draft, at{' '}
             {formatCurrency(roi.assumptions.hourlyRate, currency)}/hour. Edited answers are
             charged review time plus half the manual time. Change these under{' '}
-            <code className="rounded bg-gray-100 px-1 py-0.5">analytics.*</code> in application.yml.
+            <code className="rounded bg-gray-100 px-1 py-0.5 text-gray-700">analytics.*</code> in application.yml.
           </p>
         </div>
       </Card>
@@ -219,7 +219,7 @@ export default function AnalyticsPage() {
       {/* Throughput trend */}
       <Card>
         <CardHeader>
-          <CardTitle>Throughput</CardTitle>
+          <CardTitle as="h2">Throughput</CardTitle>
           <CardDescription>Questions answered and approved per day</CardDescription>
         </CardHeader>
         <CardContent>
@@ -276,7 +276,7 @@ export default function AnalyticsPage() {
         {/* Confidence distribution — ordered magnitude, one-hue ramp */}
         <Card>
           <CardHeader>
-            <CardTitle>Confidence distribution</CardTitle>
+            <CardTitle as="h2">Confidence distribution</CardTitle>
             <CardDescription>How sure the model was, across all questions</CardDescription>
           </CardHeader>
           <CardContent>
@@ -327,7 +327,7 @@ export default function AnalyticsPage() {
         {/* Category volume — single series, so no legend */}
         <Card>
           <CardHeader>
-            <CardTitle>Questions by category</CardTitle>
+            <CardTitle as="h2">Questions by category</CardTitle>
             <CardDescription>Where the questionnaire workload concentrates</CardDescription>
           </CardHeader>
           <CardContent>
@@ -378,7 +378,7 @@ export default function AnalyticsPage() {
       {/* SME workload — identity plus several measures reads better as a table */}
       <Card>
         <CardHeader>
-          <CardTitle>Reviewer workload</CardTitle>
+          <CardTitle as="h2">Reviewer workload</CardTitle>
           <CardDescription>Assignment load and SLA adherence per SME</CardDescription>
         </CardHeader>
         <CardContent>
@@ -409,7 +409,7 @@ export default function AnalyticsPage() {
                       <td className="py-2.5 pr-4 text-right text-gray-900">{sme.open}</td>
                       <td className={cn(
                         'py-2.5 pr-4 text-right font-medium',
-                        sme.overdue > 0 ? 'text-red-600' : 'text-gray-400'
+                        sme.overdue > 0 ? 'text-red-600' : 'text-gray-600'
                       )}>
                         {sme.overdue}
                       </td>
@@ -429,7 +429,7 @@ export default function AnalyticsPage() {
       {showTable && (
         <Card>
           <CardHeader>
-            <CardTitle>Underlying data</CardTitle>
+            <CardTitle as="h2">Underlying data</CardTitle>
             <CardDescription>The same series the charts above draw from</CardDescription>
           </CardHeader>
           <CardContent>

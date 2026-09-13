@@ -184,14 +184,14 @@ export function ReviewQueueCard({
                     <X className="mr-1 h-4 w-4" />
                     Cancel
                   </Button>
-                  <span className="ml-auto text-xs text-gray-400">
+                  <span className="ml-auto text-xs text-gray-600">
                     Ctrl+Enter to save · Shift+Ctrl+Enter to save &amp; approve · Esc to cancel
                   </span>
                 </div>
               </div>
             ) : (
               <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap">
-                {answer || <span className="italic text-gray-400">No answer drafted yet.</span>}
+                {answer || <span className="italic text-gray-600">No answer drafted yet.</span>}
               </div>
             )}
           </div>
@@ -231,7 +231,7 @@ export function ReviewQueueCard({
                     <li key={citation.id} className="rounded-lg border border-gray-200 bg-white p-2.5 text-xs">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-gray-800">{citation.documentTitle}</span>
-                        <span className="shrink-0 text-gray-400">
+                        <span className="shrink-0 text-gray-600">
                           {Math.round((citation.relevanceScore ?? 0) * 100)}% match
                         </span>
                       </div>

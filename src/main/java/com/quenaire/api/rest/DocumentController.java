@@ -15,6 +15,7 @@ package com.quenaire.api.rest;
 
 import com.quenaire.ai.ingestion.DocumentIngestionService;
 import com.quenaire.api.rest.dto.DocumentResponse;
+import com.quenaire.api.rest.dto.PageResponse;
 import com.quenaire.domain.document.Document;
 import com.quenaire.domain.document.DocumentRepository;
 import com.quenaire.domain.document.DocumentStatus;
@@ -65,7 +66,7 @@ public class DocumentController {
 
   @GetMapping
   @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'MEMBER', 'VIEWER')")
-  public ResponseEntity<Page<DocumentResponse>> list(
+  public ResponseEntity<PageResponse<DocumentResponse>> list(
       @RequestParam(required = false) DocumentStatus status, Pageable pageable) {
 
     TenantContext.requireTenant();
@@ -77,7 +78,7 @@ public class DocumentController {
                 tenantId, status, pageable)
             : documentRepository.findByTenantIdAndDeletedAtIsNull(tenantId, pageable);
 
-    return ResponseEntity.ok(documents.map(DocumentResponse::of));
+    return ResponseEntity.ok(PageResponse.of(documents, DocumentResponse::of));
   }
 
   @GetMapping("/{id}")

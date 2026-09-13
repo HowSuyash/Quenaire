@@ -124,3 +124,59 @@ export function logoutUrl(): string {
   });
   return `${REALM_PATH}/logout?${params.toString()}`;
 }
+
+interface AccessTokenClaims {
+  sub?: string;
+  email?: string;
+  given_name?: string;
+  family_name?: string;
+  tenant_id?: string;
+  realm_access?: { roles?: string[] };
+}
+
+/** Roles Keycloak adds to every account; not this product's. */
+const KEYCLOAK_DEFAULT_ROLES = ['offline_access', 'uma_authorization'];
+
+/**
+ * Reads the signed-in identity out of the access token.
+ *
+ * <p>The header showed "User" for every account because nothing ever stored who had signed in --
+ * the callback saved the token and stopped there. The claims were in the token the whole time.
+ *
+ * <p>Decoded, not verified: this is for display. Authorisation is decided by the backend, which
+ * checks the signature on every request.
+ */
+export function identityFrom(accessToken: string): {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: string;
+  tenantId: string;
+} | null {
+  const payload = accessToken.split('.')[1];
+  if (!payload) {
+    return null;
+  }
+
+  let claims: AccessTokenClaims;
+  try {
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    claims = JSON.parse(decodeURIComponent(escape(json)));
+  } catch {
+    return null;
+  }
+
+  const role = (claims.realm_access?.roles ?? []).find(
+    (r) => !KEYCLOAK_DEFAULT_ROLES.includes(r) && !r.startsWith('default-roles-')
+  );
+
+  return {
+    id: claims.sub ?? '',
+    email: claims.email ?? '',
+    firstName: claims.given_name,
+    lastName: claims.family_name,
+    role: role ?? 'VIEWER',
+    tenantId: claims.tenant_id ?? '',
+  };
+}

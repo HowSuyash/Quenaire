@@ -2,8 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { completeLogin } from '@/lib/oidc';
-import { setToken } from '@/lib/auth';
+import { completeLogin, identityFrom } from '@/lib/oidc';
+import { setToken, setUser } from '@/lib/auth';
 
 /**
  * Where Keycloak sends the browser back after signing in.
@@ -35,6 +35,13 @@ function CallbackHandler() {
     completeLogin(code, state)
       .then((tokens) => {
         setToken(tokens.access_token, tokens.refresh_token);
+
+        // Without this the header read "User" for everyone: the token was saved
+        // and the identity in it thrown away.
+        const identity = identityFrom(tokens.access_token);
+        if (identity) {
+          setUser(identity);
+        }
         // replace, not push: the code is spent, and going back would retry it.
         router.replace('/dashboard');
       })

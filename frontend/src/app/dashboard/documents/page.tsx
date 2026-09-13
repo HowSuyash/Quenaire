@@ -116,7 +116,7 @@ export default function DocumentsPage() {
               onChange={handleFileInput}
               disabled={uploading}
             />
-            <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <Upload aria-hidden="true" className="h-12 w-12 mx-auto text-gray-500 mb-4" />
             <p className="text-lg font-medium text-gray-900">
               {isDragActive ? 'Drop files here...' : 'Drag & drop documents here, or click to select'}
             </p>
@@ -156,11 +156,11 @@ export default function DocumentsPage() {
               <RefreshCw className="h-8 w-8 animate-spin text-primary-600 mx-auto mb-2" />
               <p className="text-gray-500">Loading documents...</p>
             </div>
-          ) : data?.content.length === 0 ? (
+          ) : (data?.content?.length ?? 0) === 0 ? (
             <div className="p-12 text-center">
               <FileText className="h-12 w-12 mx-auto text-gray-300 mb-3" />
               <p className="text-gray-500 mb-4">No documents yet</p>
-              <p className="text-sm text-gray-400">Drag & drop files above to get started</p>
+              <p className="text-sm text-gray-600">Drag & drop files above to get started</p>
             </div>
           ) : (
             <>
@@ -178,7 +178,7 @@ export default function DocumentsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {data?.content.map((doc) => (
+                    {data?.content?.map((doc) => (
                       <tr key={doc.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <Link href={`/dashboard/documents/${doc.id}`} className="block">

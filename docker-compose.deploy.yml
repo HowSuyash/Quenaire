@@ -30,6 +30,10 @@ services:
       POSTGRES_INITDB_ARGS: "--data-checksums"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # Creates the database Keycloak keeps accounts in. Runs once, on an empty
+      # data directory, so adding it to a server that is already running does
+      # nothing -- create the database by hand there.
+      - ./init-db:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U quenaire -d quenaire"]
       interval: 10s
@@ -67,6 +71,54 @@ services:
     entrypoint: ["sh", "-c", "ollama pull nomic-embed-text"]
     restart: "no"
 
+  # Sign-in. Accounts live in Postgres, not in the container: `start-dev` keeps
+  # them in an in-memory H2 database, so every restart would lose every user.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    # Not --optimized: that flag expects an image already augmented by `kc.sh
+    # build`, and this is the stock one, so it would refuse to start. The cost is
+    # a slower first boot while Keycloak builds its configuration.
+    command: ["start", "--import-realm"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?set KEYCLOAK_DB_PASSWORD in .env}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      # Caddy terminates TLS and the frontend proxies /auth, so Keycloak sees
+      # plain HTTP and must take the public origin from the forwarded headers.
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME: ${PUBLIC_URL}/auth
+      COMPLYAI_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_SECRET:?set KEYCLOAK_BACKEND_SECRET in .env}
+      # This domain and nothing else. A wildcard here is how an authorization
+      # code is delivered somewhere it should not be.
+      COMPLYAI_REDIRECT_URIS: ${PUBLIC_URL}/*
+      COMPLYAI_WEB_ORIGINS: ${PUBLIC_URL}
+    volumes:
+      - ./deploy/keycloak/quenaire-realm.json:/opt/keycloak/data/import/quenaire-realm.json:ro
+      - ./deploy/keycloak/health.sh:/health.sh:ro
+    healthcheck:
+      test: ["CMD", "/health.sh"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    expose:
+      - "8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   app:
     build:
       context: .
@@ -77,6 +129,8 @@ services:
       postgres:
         condition: service_healthy
       ollama:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -92,6 +146,13 @@ services:
       OLLAMA_BASE_URL: http://ollama:11434
       STORAGE_LOCAL_PATH: /var/quenaire/storage
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/auth/realms/quenaire/protocol/openid-connect/certs
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/auth/realms/quenaire
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080/auth
+      KEYCLOAK_ADMIN_REALM: quenaire
+      KEYCLOAK_ADMIN_CLIENT_ID: quenaire-backend
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_BACKEND_SECRET}
+      KEYCLOAK_REALM: quenaire
       # The API is not reachable from a browser -- the frontend proxies it --
       # so no cross-origin request should be permitted. The code default is
       # "*" with credentials allowed, which would let any site call the API

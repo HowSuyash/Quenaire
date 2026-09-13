@@ -29,43 +29,60 @@ export default function DashboardPage() {
     queryFn: () => api.getDocuments({ size: 5 }),
   });
 
+  // The counts below are tenant-wide, so they come from the analytics endpoint
+  // rather than being summed from the five rows fetched for the lists.
+  const { data: analytics } = useQuery({
+    queryKey: ['analytics', 30],
+    queryFn: () => api.getAnalyticsDashboard(30),
+  });
+
+  // Every figure here is read back from the API. Two of these cards used to hold
+  // literal constants -- Team Members 5, Completion Rate 87% -- and all four
+  // carried a hardcoded "+12% vs last month" trend, shown on accounts minutes
+  // old. Nothing compares against last month, so no trend is claimed.
+  const totals = analytics?.totals;
+
   const stats = [
     {
-      name: 'Total Questionnaires',
-      value: questionnaires?.totalElements || 0,
+      name: 'Questionnaires',
+      value: totals?.questionnaires ?? questionnaires?.totalElements ?? 0,
       icon: ClipboardList,
-      color: 'bg-blue-500',
-      trend: '+12%',
-      trendUp: true,
+      color: 'bg-primary-600',
+      hint: totals ? `${totals.questionnairesCompleted} completed` : null,
     },
     {
-      name: 'Documents Indexed',
-      value: documents?.totalElements || 0,
+      name: 'Documents indexed',
+      value: documents?.totalElements ?? 0,
       icon: FileText,
-      color: 'bg-green-500',
-      trend: '+8%',
-      trendUp: true,
+      color: 'bg-emerald-600',
+      hint: 'Answers are grounded in these',
     },
     {
-      name: 'Team Members',
-      value: 5,
+      name: 'Questions answered',
+      value: totals ? `${totals.questionsAnswered} of ${totals.questions}` : '—',
       icon: Users,
-      color: 'bg-purple-500',
-      trend: '+2',
-      trendUp: true,
+      color: 'bg-sky-600',
+      hint: totals ? `${totals.questionsApproved} approved` : null,
     },
     {
-      name: 'Completion Rate',
-      value: '87%',
+      name: 'Answered without edits',
+      // What the product is actually for: the share of answers a reviewer let
+      // through unchanged. Undefined until something has been answered, and
+      // shown as such rather than as a number.
+      value:
+        totals && totals.questionsAnswered > 0
+          ? `${Math.round(totals.automationRate)}%`
+          : '—',
       icon: TrendingUp,
-      color: 'bg-orange-500',
-      trend: '+5%',
-      trendUp: true,
+      color: 'bg-indigo-600',
+      hint: totals && totals.questionsHumanEdited > 0
+        ? `${totals.questionsHumanEdited} edited by a reviewer`
+        : null,
     },
   ];
 
-  const recentQuestionnaires = questionnaires?.content.slice(0, 5) || [];
-  const recentDocuments = documents?.content.slice(0, 5) || [];
+  const recentQuestionnaires = questionnaires?.content?.slice(0, 5) || [];
+  const recentDocuments = documents?.content?.slice(0, 5) || [];
 
   return (
     <div className="space-y-6">
@@ -92,15 +109,9 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">{stat.name}</p>
                   <p className="text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    {stat.trendUp ? (
-                      <ArrowUpRight className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <ArrowDownRight className="h-4 w-4 text-red-500" />
-                    )}
-                    <span className="text-sm font-medium text-green-500">{stat.trend}</span>
-                    <span className="text-sm text-gray-500">vs last month</span>
-                  </div>
+                  {stat.hint && (
+                    <p className="text-sm text-gray-500 mt-2">{stat.hint}</p>
+                  )}
                 </div>
                 <div className={cn('p-3 rounded-xl', stat.color)}>
                   <stat.icon className="h-6 w-6 text-white" />
@@ -116,7 +127,7 @@ export default function DashboardPage() {
         {/* Recent Questionnaires */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Questionnaires</CardTitle>
+            <CardTitle as="h2">Recent Questionnaires</CardTitle>
             <Link href="/dashboard/questionnaires" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
               View all
               <ArrowUpRight className="h-3 w-3" />
@@ -144,7 +155,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge className={getStatusColor(q.status)}>{q.status.replace('_', ' ')}</Badge>
-                        <ExternalLink className="h-4 w-4 text-gray-400" />
+                        <ExternalLink className="h-4 w-4 text-gray-600" />
                       </div>
                     </div>
                   </Link>
@@ -157,7 +168,7 @@ export default function DashboardPage() {
         {/* Recent Documents */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Documents</CardTitle>
+            <CardTitle as="h2">Recent Documents</CardTitle>
             <Link href="/dashboard/documents" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
               View all
               <ArrowUpRight className="h-3 w-3" />
@@ -199,7 +210,7 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle as="h2">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -217,11 +228,15 @@ export default function DashboardPage() {
                 <span className="text-xs text-gray-500">Add to knowledge base</span>
               </Button>
             </Link>
-            <Link href="/dashboard/settings" className="block">
+            {/* The integrations tile used to advertise Jira, Confluence, GitHub and Slack.
+                No controller serves /api/integrations -- there is no backend behind any of
+                them -- so the four status calls 404. Pointing at the review queue instead:
+                a tile that goes somewhere real. */}
+            <Link href="/dashboard/review-queue" className="block">
               <Button variant="outline" className="w-full h-24 flex flex-col items-center justify-center gap-2">
-                <ExternalLink className="h-8 w-8 text-blue-600" />
-                <span className="font-medium">Configure Integrations</span>
-                <span className="text-xs text-gray-500">Jira, Confluence, GitHub, Slack</span>
+                <ExternalLink className="h-8 w-8 text-sky-600" />
+                <span className="font-medium">Review Queue</span>
+                <span className="text-xs text-gray-500">Approve or correct answers</span>
               </Button>
             </Link>
             <Link href="/api/swagger-ui.html" target="_blank" rel="noopener noreferrer" className="block">

@@ -17,7 +17,6 @@ import {
   ChevronDown,
   Menu,
   X,
-  Bell,
   Search,
   ExternalLink,
   Inbox,
@@ -67,6 +66,7 @@ export default function DashboardLayout({
     removeToken();
     router.push('/login');
   };
+
 
   return (
     <ToastProvider>
@@ -154,11 +154,6 @@ export default function DashboardLayout({
               </div>
 
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">3</span>
-                </Button>
-
                 <div className="relative">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -167,7 +162,7 @@ export default function DashboardLayout({
                     <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
                       <User className="h-5 w-5 text-primary-600" />
                     </div>
-                    <span className="hidden sm:block text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
+                    <span className="hidden sm:block text-sm font-medium text-gray-700">{user?.name || 'Signed in'}</span>
                     <ChevronDown className="h-4 w-4 text-gray-500" />
                   </button>
 

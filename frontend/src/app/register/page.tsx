@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { QuenaireMark } from '@/components/brand/QuenaireMark';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Check, CheckCircle, Loader2, Shield, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -184,13 +185,17 @@ export default function RegisterPage() {
   // ---- Form ---------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-12">
+    <main className="min-h-screen bg-gray-50 px-4 py-12">
       <div className="mx-auto w-full max-w-lg">
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-center justify-center">
-            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-600">
-              <Shield className="h-7 w-7 text-white" />
-            </span>
+          {/* aria-label because the link's only content is a graphic: a screen
+              reader announced it as an unlabelled link. */}
+          <Link
+            href="/"
+            aria-label="Quenaire home"
+            className="inline-flex items-center justify-center"
+          >
+            <QuenaireMark className="h-14 w-14" />
           </Link>
           <h1 className="mt-4 text-3xl font-bold text-gray-900">Create your workspace</h1>
           <p className="mt-1 text-gray-500">
@@ -200,7 +205,7 @@ export default function RegisterPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Get started</CardTitle>
+            <CardTitle as="h2">Get started</CardTitle>
             <CardDescription>Free for 14 days. No card required.</CardDescription>
           </CardHeader>
 
@@ -221,7 +226,7 @@ export default function RegisterPage() {
                   Workspace address
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="shrink-0 text-sm text-gray-400">/trust/</span>
+                  <span className="shrink-0 text-sm text-gray-600">/trust/</span>
                   <div className="relative flex-1">
                     <input
                       id="workspace"
@@ -332,7 +337,7 @@ export default function RegisterPage() {
                 )}
               </Button>
 
-              <p className="text-center text-xs text-gray-400">
+              <p className="text-center text-xs text-gray-600">
                 By creating a workspace you agree to the terms of service.
               </p>
             </form>
@@ -346,6 +351,6 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

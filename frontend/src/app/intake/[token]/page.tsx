@@ -255,7 +255,7 @@ export default function IntakePage() {
               <p className="text-gray-500 mt-2">
                 {status?.error || 'This intake link is invalid or has expired.'}
               </p>
-              <p className="text-sm text-gray-400 mt-4">
+              <p className="text-sm text-gray-600 mt-4">
                 Please contact the sender for a new intake link.
               </p>
             </CardContent>
@@ -391,7 +391,7 @@ export default function IntakePage() {
                     disabled={uploading}
                   />
                   <label htmlFor="questionnaire-file" className="cursor-pointer block">
-                    <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <Upload className="h-12 w-12 mx-auto text-gray-600 mb-4" />
                     {selectedFile ? (
                       <div className="space-y-1">
                         <p className="font-medium text-gray-900">{selectedFile.name}</p>

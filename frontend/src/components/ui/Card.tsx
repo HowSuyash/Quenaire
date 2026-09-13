@@ -23,11 +23,23 @@ export const CardHeader = forwardRef<HTMLDivElement, CardProps>(
 );
 CardHeader.displayName = 'CardHeader';
 
-export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadingElement>>(
-  ({ className, ...props }, ref) => (
-    <h3 ref={ref} className={cn('text-xl font-semibold leading-none tracking-tight', className)} {...props} />
-  )
-);
+/**
+ * A card's heading.
+ *
+ * The level is the caller's to choose. Fixed at `h3`, a card placed under the page's `h1`
+ * skipped `h2`, which axe reports as an invalid heading order -- a screen reader user
+ * navigating by heading loses the page's structure.
+ */
+export const CardTitle = forwardRef<
+  HTMLHeadingElement,
+  HTMLAttributes<HTMLHeadingElement> & { as?: 'h2' | 'h3' | 'h4' }
+>(({ className, as: Heading = 'h3', ...props }, ref) => (
+  <Heading
+    ref={ref}
+    className={cn('text-xl font-semibold leading-none tracking-tight', className)}
+    {...props}
+  />
+));
 CardTitle.displayName = 'CardTitle';
 
 export const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLParagraphElement>>(

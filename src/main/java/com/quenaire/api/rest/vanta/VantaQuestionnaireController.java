@@ -15,6 +15,7 @@ package com.quenaire.api.rest.vanta;
 
 import com.quenaire.ai.vanta.VantaQuestionnaireService;
 import com.quenaire.ai.vanta.VantaReviewService;
+import com.quenaire.api.rest.dto.PageResponse;
 import com.quenaire.api.rest.vanta.dto.QuestionResponse;
 import com.quenaire.api.rest.vanta.dto.QuestionnaireResponse;
 import com.quenaire.domain.questionnaire.vanta.VantaQuestion;
@@ -28,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -84,18 +84,12 @@ public class VantaQuestionnaireController {
    * questionnaires had been uploaded -- a 200 that looked like "you have none".
    */
   @GetMapping
-  public ResponseEntity<Map<String, Object>> listQuestionnaires(
+  public ResponseEntity<PageResponse<QuestionnaireResponse>> listQuestionnaires(
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
 
-    Page<VantaQuestionnaire> result = questionnaireService.listQuestionnaires(page, size);
-
     return ResponseEntity.ok(
-        Map.of(
-            "items", result.getContent().stream().map(QuestionnaireResponse::of).toList(),
-            "page", result.getNumber(),
-            "size", result.getSize(),
-            "totalElements", result.getTotalElements(),
-            "totalPages", result.getTotalPages()));
+        PageResponse.of(
+            questionnaireService.listQuestionnaires(page, size), QuestionnaireResponse::of));
   }
 
   @GetMapping("/{id}")

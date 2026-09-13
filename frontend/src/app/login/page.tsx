@@ -33,7 +33,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <QuenaireMark className="mx-auto mb-4 h-16 w-16" />
@@ -43,7 +43,7 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader className="text-center">
-            <CardTitle>Sign in to your account</CardTitle>
+            <CardTitle as="h2">Sign in to your account</CardTitle>
             <CardDescription>You will be taken to your identity provider</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -65,20 +65,20 @@ export default function LoginPage() {
 
             <p className="text-center text-sm text-gray-500">
               Don&apos;t have an account?{' '}
-              <a href="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+              <a href="/register" className="text-primary-700 underline font-medium">
                 Sign up
               </a>
             </p>
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <p className="text-center text-xs text-gray-600 mt-6">
           By signing in, you agree to our{' '}
-          <a href="#" className="text-primary-600 hover:underline">Terms of Service</a>{' '}
+          <a href="#" className="text-primary-700 underline">Terms of Service</a>{' '}
           and{' '}
-          <a href="#" className="text-primary-600 hover:underline">Privacy Policy</a>
+          <a href="#" className="text-primary-700 underline">Privacy Policy</a>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

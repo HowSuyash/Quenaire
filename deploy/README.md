@@ -26,6 +26,7 @@ You need four things, and three of them are yours to get:
 | An AWS account with a Lightsail instance in ap-south-1 | aws.amazon.com |
 | An Anthropic API key | console.anthropic.com — this is what pays for generation |
 | A Postgres password | `openssl rand -base64 32` on the server |
+| Three more secrets for sign-in | `openssl rand -base64 32` each — see `.env.deploy.example` |
 
 Caddy issues the TLS certificate itself; there is nothing to buy or renew.
 
@@ -108,6 +109,27 @@ in the order they are worth considering:
 For showing the product to someone before that is settled, use
 `docker-compose.demo.yml`, which runs on your own machine behind a temporary
 address and enables a local demo session.
+
+## Sign-in
+
+Keycloak runs in the stack and owns the login page; the application never sees a
+password. Accounts are kept in Postgres, in their own database created by
+`init-db/01-keycloak-db.sh` — which runs **only when Postgres first initialises**.
+Adding it to a server whose database already exists does nothing, so create that
+database by hand there.
+
+The realm is imported from `deploy/keycloak/quenaire-realm.json` on first start:
+two clients, five roles, and the `tenant_id` mapper the backend reads. Its
+redirect URI is set from `PUBLIC_URL`, exactly — not a wildcard, because a
+redirect URI is where an authorization code gets delivered.
+
+Sign-in is served at `/auth` on the same origin as the app, proxied through the
+frontend. There is no second hostname to point at Keycloak.
+
+The first account is created through `/register`, which provisions it in Keycloak
+and grants it OWNER. The response says `credentialsProvisioned: true` when that
+worked; if it says `false`, the backend could not reach Keycloak's admin API and
+the account exists with no way to sign in.
 
 ## Things that will bite
 

@@ -428,7 +428,7 @@ class ApiClient {
   // Questionnaires
   async getQuestionnaires(params?: { page?: number; size?: number; status?: string; search?: string }): Promise<PaginatedResponse<Questionnaire>> {
     try {
-      const { data } = await this.client.get('/questionnaires', { params });
+      const { data } = await this.client.get('/vanta/questionnaires', { params });
       return data;
     } catch (error) {
       requireMockData('getQuestionnaires', error);
@@ -466,7 +466,7 @@ class ApiClient {
 
   async createQuestionnaire(data: FormData): Promise<Questionnaire> {
     try {
-      const { data: response } = await this.client.post('/questionnaires', data, {
+      const { data: response } = await this.client.post('/vanta/questionnaires', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response;
@@ -698,7 +698,7 @@ class ApiClient {
   // Documents
   async getDocuments(params?: { page?: number; size?: number; status?: string; search?: string }): Promise<PaginatedResponse<Document>> {
     try {
-      const { data } = await this.client.get('/documents', { params });
+      const { data } = await this.client.get('/v1/documents', { params });
       return data;
     } catch (error) {
       requireMockData('getDocuments', error);
@@ -733,7 +733,7 @@ class ApiClient {
 
   async uploadDocument(data: FormData): Promise<Document> {
     try {
-      const { data: response } = await this.client.post('/documents', data, {
+      const { data: response } = await this.client.post('/v1/documents', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response;
@@ -762,7 +762,7 @@ class ApiClient {
 
   async uploadTextDocument(data: { title: string; content: string; description?: string }) {
     try {
-      const { data: response } = await this.client.post('/documents/text', data);
+      const { data: response } = await this.client.post('/v1/documents/text', data);
       return response;
     } catch (error) {
       requireMockData('uploadTextDocument', error);
@@ -783,7 +783,7 @@ class ApiClient {
   // Tenant
   async getCurrentTenant(): Promise<Tenant> {
     try {
-      const { data } = await this.client.get('/tenants/current');
+      const { data } = await this.client.get('/v1/tenants/current');
       return data;
     } catch (error) {
       requireMockData('getCurrentTenant', error);
@@ -804,7 +804,7 @@ class ApiClient {
 
   async updateTenant(data: Partial<Tenant>) {
     try {
-      const { data: response } = await this.client.put('/tenants/current', data);
+      const { data: response } = await this.client.put('/v1/tenants/current', data);
       return response;
     } catch (error) {
       requireMockData('updateTenant', error);
@@ -815,7 +815,7 @@ class ApiClient {
   // Users
   async getUsers(params?: { page?: number; size?: number }): Promise<PaginatedResponse<User>> {
     try {
-      const { data } = await this.client.get('/users', { params });
+      const { data } = await this.client.get('/v1/users', { params });
       return data;
     } catch (error) {
       requireMockData('getUsers', error);
@@ -859,7 +859,7 @@ class ApiClient {
 
   async inviteUser(data: { email: string; role: string }) {
     try {
-      const { data: response } = await this.client.post('/users/invite', data);
+      const { data: response } = await this.client.post('/v1/users/invite', data);
       return response;
     } catch (error) {
       requireMockData('inviteUser', error);

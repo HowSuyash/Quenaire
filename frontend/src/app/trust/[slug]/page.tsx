@@ -91,7 +91,7 @@ function DocumentRow({ item, accent }: { item: TrustItem; accent: string }) {
   return (
     <li className="flex items-center justify-between gap-4 border-b border-gray-100 py-3 last:border-0">
       <div className="flex min-w-0 items-center gap-3">
-        <FileText className="h-4 w-4 shrink-0 text-gray-400" />
+        <FileText className="h-4 w-4 shrink-0 text-gray-600" />
         <div className="min-w-0">
           <p className="truncate font-medium text-gray-900">{item.title}</p>
           {item.body && <p className="truncate text-xs text-gray-500">{item.body}</p>}
@@ -260,7 +260,7 @@ export default async function TrustCenterPage({ params }: PageProps) {
                 >
                   <summary className="flex cursor-pointer items-center justify-between gap-4 font-medium text-gray-900">
                     {item.title}
-                    <span className="text-gray-400 transition-transform group-open:rotate-45">+</span>
+                    <span className="text-gray-600 transition-transform group-open:rotate-45">+</span>
                   </summary>
                   {item.body && (
                     <p className="mt-3 whitespace-pre-wrap text-sm text-gray-600">{item.body}</p>

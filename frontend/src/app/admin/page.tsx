@@ -94,7 +94,7 @@ export default function PlatformAdminPage() {
 
   if (loading && !stats && tenants.length === 0) {
     return (
-      <div className="flex items-center justify-center py-24 text-gray-400">
+      <div className="flex items-center justify-center py-24 text-gray-600">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -103,7 +103,7 @@ export default function PlatformAdminPage() {
   if (forbidden) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
-        <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-gray-400" />
+        <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-gray-600" />
         <h1 className="text-lg font-semibold text-gray-900">Platform access required</h1>
         <p className="mt-1 text-sm text-gray-500">
           This portal is limited to accounts holding the <code>PLATFORM_ADMIN</code> realm role.
@@ -136,7 +136,7 @@ export default function PlatformAdminPage() {
         {tiles.map(({ label, value, icon: Icon }) => (
           <Card key={label}>
             <CardContent className="flex items-center gap-3 p-4">
-              <Icon className="h-5 w-5 shrink-0 text-gray-400" />
+              <Icon className="h-5 w-5 shrink-0 text-gray-600" />
               <div className="min-w-0">
                 <p className="text-xl font-semibold text-gray-900">{value}</p>
                 <p className="truncate text-xs text-gray-500">{label}</p>
@@ -148,7 +148,7 @@ export default function PlatformAdminPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Workspaces</CardTitle>
+          <CardTitle as="h2">Workspaces</CardTitle>
           <CardDescription>{tenants.length} shown</CardDescription>
         </CardHeader>
         <CardContent>

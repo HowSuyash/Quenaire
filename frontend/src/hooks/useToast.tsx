@@ -53,7 +53,15 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+    // A live region, which is both correct and what stops axe reporting these as
+    // content outside any landmark: a toast is announced when it appears rather
+    // than being part of the page's structure.
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="false"
+      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
+    >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
       ))}
@@ -78,14 +86,14 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
 
   return (
     <div className={cn('flex items-start gap-3 p-4 rounded-lg border shadow-lg min-w-[300px] max-w-md animate-slide-in', variants[toast.variant || 'default'])}>
-      <span className="text-xl">{icons[toast.variant || 'default']}</span>
+      <span aria-hidden="true" className="text-xl">{icons[toast.variant || 'default']}</span>
       <div className="flex-1">
         <p className="font-medium text-gray-900">{toast.title}</p>
         {toast.description && <p className="text-sm text-gray-600 mt-1">{toast.description}</p>}
       </div>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="text-gray-400 hover:text-gray-600"
+        className="text-gray-600 hover:text-gray-900"
       >
         ✕
       </button>

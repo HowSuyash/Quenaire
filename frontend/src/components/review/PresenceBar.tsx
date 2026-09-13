@@ -34,7 +34,7 @@ export function PresenceBar({ peers, connected, className }: PresenceBarProps) {
         {connected ? (
           <Wifi className="h-3.5 w-3.5 text-green-600" />
         ) : (
-          <WifiOff className="h-3.5 w-3.5 text-gray-400" />
+          <WifiOff className="h-3.5 w-3.5 text-gray-600" />
         )}
         <span>{connected ? 'Live' : 'Offline'}</span>
       </div>

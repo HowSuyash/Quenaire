@@ -88,7 +88,10 @@ export default function QuestionnairesPage() {
                 leftIcon={<Search className="h-4 w-4" />}
               />
             </div>
+            {/* aria-label because the control has no visible label beside it: a
+                screen reader announced an unnamed select. */}
             <Select
+              aria-label="Filter by status"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               options={statusOptions}
@@ -110,7 +113,7 @@ export default function QuestionnairesPage() {
               <RefreshCw className="h-8 w-8 animate-spin text-primary-600 mx-auto mb-2" />
               <p className="text-gray-500">Loading questionnaires...</p>
             </div>
-          ) : data?.content.length === 0 ? (
+          ) : (data?.content?.length ?? 0) === 0 ? (
             <div className="p-12 text-center">
               <p className="text-gray-500 mb-4">No questionnaires found</p>
               <Link href="/dashboard/questionnaires/new">
@@ -136,7 +139,7 @@ export default function QuestionnairesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {data?.content.map((q: Questionnaire) => (
+                    {data?.content?.map((q: Questionnaire) => (
                       <tr key={q.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <Link href={`/dashboard/questionnaires/${q.id}`} className="block">
