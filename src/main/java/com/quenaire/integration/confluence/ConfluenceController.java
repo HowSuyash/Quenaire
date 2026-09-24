@@ -98,7 +98,7 @@ public class ConfluenceController {
 
   @GetMapping("/pages/{pageId}")
   public ResponseEntity<Map<String, Object>> getPage(@PathVariable String pageId) {
-    Optional<com.fasterxml.jackson.databind.JsonNode> page = confluenceService.getPage(pageId);
+    Optional<tools.jackson.databind.JsonNode> page = confluenceService.getPage(pageId);
     if (page.isPresent()) {
       return ResponseEntity.ok(Map.of("success", true, "page", page.get()));
     }

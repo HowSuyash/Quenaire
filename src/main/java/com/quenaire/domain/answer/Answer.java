@@ -229,7 +229,7 @@ public class Answer extends BaseEntity {
   public List<UUID> getCitationIds() {
     if (citationsJson == null || citationsJson.isEmpty()) return new ArrayList<>();
     try {
-      return new com.fasterxml.jackson.databind.ObjectMapper().readValue(citationsJson, List.class);
+      return new tools.jackson.databind.ObjectMapper().readValue(citationsJson, List.class);
     } catch (Exception e) {
       return new ArrayList<>();
     }

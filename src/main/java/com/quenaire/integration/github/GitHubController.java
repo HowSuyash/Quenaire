@@ -88,7 +88,7 @@ public class GitHubController {
 
   @GetMapping("/issues/{issueNumber}")
   public ResponseEntity<Map<String, Object>> getIssue(@PathVariable int issueNumber) {
-    Optional<com.fasterxml.jackson.databind.JsonNode> issue = githubService.getIssue(issueNumber);
+    Optional<tools.jackson.databind.JsonNode> issue = githubService.getIssue(issueNumber);
     if (issue.isPresent()) {
       return ResponseEntity.ok(Map.of("success", true, "issue", issue.get()));
     }

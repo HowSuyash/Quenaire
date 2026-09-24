@@ -13,7 +13,6 @@
  */
 package com.quenaire.ai.vanta;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.ai.rag.VectorLiterals;
 import com.quenaire.domain.questionnaire.vanta.*;
 import com.quenaire.domain.tenant.Tenant;
@@ -29,6 +28,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class AnswerLibraryService {

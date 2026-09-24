@@ -13,7 +13,6 @@
  */
 package com.quenaire.ai.whitelabel;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.domain.tenant.Tenant;
 import com.quenaire.domain.tenant.TenantRepository;
 import com.quenaire.domain.tenant.TenantStatus;
@@ -27,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Whitelabel presentation: the colours, logo and wording a tenant puts in front of its own
@@ -263,8 +263,7 @@ public class WhitelabelService {
 
   // ---- Validation -------------------------------------------------------
 
-  private static String text(
-      com.fasterxml.jackson.databind.JsonNode node, String field, String fallback) {
+  private static String text(tools.jackson.databind.JsonNode node, String field, String fallback) {
     String value = node.path(field).asText(null);
     return (value == null || value.isBlank() || "null".equals(value)) ? fallback : value;
   }

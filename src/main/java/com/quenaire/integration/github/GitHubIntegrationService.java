@@ -13,8 +13,6 @@
  */
 package com.quenaire.integration.github;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.domain.questionnaire.Question;
 import com.quenaire.domain.questionnaire.Questionnaire;
 import java.io.IOException;
@@ -26,6 +24,9 @@ import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class GitHubIntegrationService {
@@ -106,7 +107,7 @@ public class GitHubIntegrationService {
         log.info("Created GitHub issue #{}", issueNumber);
         return Optional.of(String.valueOf(issueNumber));
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error creating GitHub issue", e);
       return Optional.empty();
     }
@@ -155,7 +156,7 @@ public class GitHubIntegrationService {
         JsonNode node = objectMapper.readTree(response.body().string());
         return Optional.of(String.valueOf(node.get("number").asInt()));
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error creating GitHub sub-issue", e);
       return Optional.empty();
     }
@@ -182,7 +183,7 @@ public class GitHubIntegrationService {
         if (!response.isSuccessful()) return Optional.empty();
         return Optional.of(objectMapper.readTree(response.body().string()));
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error fetching GitHub issue", e);
       return Optional.empty();
     }
@@ -212,7 +213,7 @@ public class GitHubIntegrationService {
       try (Response response = client.newCall(request).execute()) {
         return response.isSuccessful();
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error adding GitHub comment", e);
       return false;
     }
@@ -241,7 +242,7 @@ public class GitHubIntegrationService {
       try (Response response = client.newCall(request).execute()) {
         return response.isSuccessful();
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error closing GitHub issue", e);
       return false;
     }
@@ -276,7 +277,7 @@ public class GitHubIntegrationService {
         }
         return Optional.of("dispatched");
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error creating repository dispatch", e);
       return Optional.empty();
     }
@@ -307,7 +308,7 @@ public class GitHubIntegrationService {
           for (JsonNode opt : options) {
             sb.append("- ").append(opt.asText()).append("\n");
           }
-        } catch (IOException ignored) {
+        } catch (JacksonException ignored) {
         }
         sb.append("\n");
       }

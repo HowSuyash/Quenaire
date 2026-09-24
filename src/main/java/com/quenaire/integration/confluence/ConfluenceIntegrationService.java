@@ -13,8 +13,6 @@
  */
 package com.quenaire.integration.confluence;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.domain.document.Document;
 import com.quenaire.domain.questionnaire.Question;
 import com.quenaire.domain.questionnaire.Questionnaire;
@@ -29,6 +27,9 @@ import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class ConfluenceIntegrationService {
@@ -122,7 +123,7 @@ public class ConfluenceIntegrationService {
         log.info("Created Confluence page: {} (ID: {})", title, pageId);
         return Optional.of(pageId);
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error creating Confluence page", e);
       return Optional.empty();
     }
@@ -172,7 +173,7 @@ public class ConfluenceIntegrationService {
         JsonNode node = objectMapper.readTree(response.body().string());
         return Optional.of(node.get("id").asText());
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error updating Confluence page", e);
       return Optional.empty();
     }
@@ -196,7 +197,7 @@ public class ConfluenceIntegrationService {
         if (!response.isSuccessful()) return Optional.empty();
         return Optional.of(objectMapper.readTree(response.body().string()));
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error fetching Confluence page", e);
       return Optional.empty();
     }
@@ -220,7 +221,7 @@ public class ConfluenceIntegrationService {
         if (!response.isSuccessful()) return Optional.empty();
         return Optional.of(objectMapper.readTree(response.body().string()).toString());
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error searching Confluence pages", e);
       return Optional.empty();
     }
@@ -255,7 +256,10 @@ public class ConfluenceIntegrationService {
           for (JsonNode opt : options) {
             sb.append("<li>").append(escapeHtml(opt.asText())).append("</li>");
           }
-        } catch (IOException ignored) {
+        } catch (JacksonException ignored) {
+          // Jackson 3 throws unchecked, so the old catch of IOException no longer
+          // compiles. Malformed options are skipped rather than failing the export:
+          // the question's text is worth publishing without them.
         }
         sb.append("</ul>");
       }

@@ -435,7 +435,7 @@ public class VantaQuestion extends BaseEntity {
   public List<String> getOptions() {
     if (optionsJson == null || optionsJson.isEmpty()) return new ArrayList<>();
     try {
-      return new com.fasterxml.jackson.databind.ObjectMapper().readValue(optionsJson, List.class);
+      return new tools.jackson.databind.ObjectMapper().readValue(optionsJson, List.class);
     } catch (Exception e) {
       return new ArrayList<>();
     }

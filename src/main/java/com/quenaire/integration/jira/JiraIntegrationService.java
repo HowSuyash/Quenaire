@@ -13,8 +13,6 @@
  */
 package com.quenaire.integration.jira;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.domain.questionnaire.Question;
 import com.quenaire.domain.questionnaire.Questionnaire;
 import java.io.IOException;
@@ -28,6 +26,9 @@ import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class JiraIntegrationService {
@@ -113,7 +114,7 @@ public class JiraIntegrationService {
         log.info("Created Jira issue: {}", issueKey);
         return Optional.of(issueKey);
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error creating Jira issue", e);
       return Optional.empty();
     }
@@ -160,7 +161,7 @@ public class JiraIntegrationService {
         JsonNode node = objectMapper.readTree(response.body().string());
         return Optional.of(node.get("key").asText());
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error creating Jira sub-task", e);
       return Optional.empty();
     }
@@ -180,7 +181,7 @@ public class JiraIntegrationService {
         if (!response.isSuccessful()) return Optional.empty();
         return Optional.of(objectMapper.readTree(response.body().string()));
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error fetching Jira issue", e);
       return Optional.empty();
     }
@@ -202,7 +203,7 @@ public class JiraIntegrationService {
       try (Response response = client.newCall(request).execute()) {
         return response.isSuccessful();
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error adding Jira comment", e);
       return false;
     }
@@ -239,7 +240,7 @@ public class JiraIntegrationService {
           }
         }
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error transitioning Jira issue", e);
     }
     return false;

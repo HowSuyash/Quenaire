@@ -1,5 +1,5 @@
 plugins {
-    id("org.springframework.boot") version "3.2.5"
+    id("org.springframework.boot") version "4.1.0"
     id("java")
     id("org.flywaydb.flyway") version "10.14.0"
     id("com.diffplug.spotless") version "6.25.0"
@@ -38,7 +38,7 @@ ext {
 
 dependencies {
     // Spring Boot BOM (replaces io.spring.dependency-management plugin)
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:3.2.5"))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:4.1.0"))
 
     // Spring Boot Starters
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -61,7 +61,10 @@ dependencies {
     // Gives SqlTypes.VECTOR a real binding. Without it Hibernate serialises the
     // field to bytea and Postgres rejects the insert:
     //   column "embedding" is of type vector but expression is of type bytea
-    implementation("org.hibernate.orm:hibernate-vector:6.4.4.Final")
+    // Version comes from Boot's platform so it tracks the Hibernate the rest of
+    // the application is compiled against. Pinning it to 6.4.4 against Boot 4's
+    // Hibernate 7 would load two incompatible copies of the ORM's internals.
+    implementation("org.hibernate.orm:hibernate-vector")
 
     // Kafka
     implementation("org.springframework.kafka:spring-kafka")
