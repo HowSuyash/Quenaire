@@ -320,7 +320,7 @@ public class VantaQuestionnaireService {
   private String serializeOptions(List<String> options) {
     if (options == null || options.isEmpty()) return "[]";
     try {
-      return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(options);
+      return new tools.jackson.databind.ObjectMapper().writeValueAsString(options);
     } catch (Exception e) {
       return "[]";
     }
@@ -335,7 +335,7 @@ public class VantaQuestionnaireService {
     coords.put("cellStyleData", pq.getCellStyleData());
     coords.put("cellCoordinates", pq.getCellCoordinates());
     try {
-      return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(coords);
+      return new tools.jackson.databind.ObjectMapper().writeValueAsString(coords);
     } catch (Exception e) {
       return "{}";
     }

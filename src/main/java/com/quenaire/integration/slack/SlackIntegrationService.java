@@ -13,8 +13,6 @@
  */
 package com.quenaire.integration.slack;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.domain.document.Document;
 import com.quenaire.domain.questionnaire.Question;
 import com.quenaire.domain.questionnaire.Questionnaire;
@@ -28,6 +26,9 @@ import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class SlackIntegrationService {
@@ -86,7 +87,7 @@ public class SlackIntegrationService {
         log.error("Slack API error: {}", node.get("error").asText());
         return Optional.empty();
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error sending Slack message", e);
       return Optional.empty();
     }
@@ -128,7 +129,7 @@ public class SlackIntegrationService {
         log.error("Slack API error: {}", node.get("error").asText());
         return Optional.empty();
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.error("Error sending Slack message with blocks", e);
       return Optional.empty();
     }

@@ -40,7 +40,7 @@ import com.quenaire.security.TenantContext;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class RetrievalServiceTest extends IntegrationTestBase {
 
@@ -56,7 +56,7 @@ class RetrievalServiceTest extends IntegrationTestBase {
 
   @Autowired QuestionRepository questionRepository;
 
-  @MockBean EmbeddingService embeddingService;
+  @MockitoBean EmbeddingService embeddingService;
 
   @Test
   void retrieveWithNoDocuments() {

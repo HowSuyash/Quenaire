@@ -13,7 +13,6 @@
  */
 package com.quenaire.api.rest.vanta;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.ai.vanta.AnswerLibraryService;
 import com.quenaire.domain.questionnaire.vanta.QuestionType;
 import com.quenaire.domain.questionnaire.vanta.VantaQuestion;
@@ -34,6 +33,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Receives answers captured by the browser extension on a third-party portal (OneTrust, Whistic,

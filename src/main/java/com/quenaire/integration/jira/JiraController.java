@@ -88,7 +88,7 @@ public class JiraController {
 
   @GetMapping("/issues/{issueKey}")
   public ResponseEntity<Map<String, Object>> getIssue(@PathVariable String issueKey) {
-    Optional<com.fasterxml.jackson.databind.JsonNode> issue = jiraService.getIssue(issueKey);
+    Optional<tools.jackson.databind.JsonNode> issue = jiraService.getIssue(issueKey);
     if (issue.isPresent()) {
       return ResponseEntity.ok(Map.of("success", true, "issue", issue.get()));
     }

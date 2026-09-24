@@ -44,8 +44,13 @@ spring:
 
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+      # Boot 4 moved these: the autoconfiguration classes now live under
+      # org.springframework.boot.data.redis.autoconfigure and are prefixed Data*.
+      # With the old names the exclusion matched nothing, Redis autoconfigured
+      # itself again, and its health indicator took the whole endpoint DOWN --
+      # for a dependency no code in this application uses.
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisReactiveAutoConfiguration
 
 management:
   health:

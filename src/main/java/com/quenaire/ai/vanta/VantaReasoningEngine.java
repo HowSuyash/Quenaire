@@ -13,7 +13,6 @@
  */
 package com.quenaire.ai.vanta;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.ai.llm.LlmClient;
 import com.quenaire.ai.program.ProgramAwarenessService;
 import com.quenaire.domain.answer.Answer;
@@ -26,6 +25,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class VantaReasoningEngine {

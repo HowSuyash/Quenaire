@@ -13,8 +13,6 @@
  */
 package com.quenaire.ai.program.collector;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.ai.program.ProgramSignalCollector;
 import com.quenaire.domain.program.ProgramSignal;
 import com.quenaire.integration.confluence.ConfluenceConfig;
@@ -33,6 +31,9 @@ import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Tracks the tenant's written policies in Confluence and, crucially, how fresh they are.
@@ -163,7 +164,7 @@ public class ConfluenceSignalCollector implements ProgramSignalCollector {
         return Optional.empty();
       }
       return Optional.of(objectMapper.readTree(response.body().string()));
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.warn("Confluence listing failed: {}", e.getMessage());
       return Optional.empty();
     }

@@ -13,8 +13,6 @@
  */
 package com.quenaire.integration.loopio;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.domain.questionnaire.vanta.VantaQuestion;
 import com.quenaire.domain.questionnaire.vanta.VantaQuestionnaire;
 import java.io.IOException;
@@ -26,6 +24,9 @@ import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Pushes approved answers into a Loopio project so the customer's RFP team sees them in the tool
@@ -120,7 +121,7 @@ public class LoopioIntegrationService {
           failed++;
           errors.add("Question " + question.getQuestionNumber() + " was rejected by Loopio");
         }
-      } catch (IOException e) {
+      } catch (IOException | JacksonException e) {
         failed++;
         errors.add("Question " + question.getQuestionNumber() + ": " + e.getMessage());
         log.warn("Loopio push failed for question {}", question.getId(), e);
@@ -168,7 +169,7 @@ public class LoopioIntegrationService {
                 "section", item.path("sectionName").asText("")));
       }
       return questions;
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.warn("Loopio project import failed", e);
       return List.of();
     }
@@ -218,7 +219,7 @@ public class LoopioIntegrationService {
       long expiresIn = root.path("expires_in").asLong(3600);
       cachedToken.set(new CachedToken(token, Instant.now().plusSeconds(expiresIn)));
       return Optional.of(token);
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.warn("Loopio auth request failed", e);
       return Optional.empty();
     }
@@ -245,7 +246,7 @@ public class LoopioIntegrationService {
         JsonNode root = objectMapper.readTree(response.body().string());
         return Optional.ofNullable(root.path("id").asText(null));
       }
-    } catch (IOException e) {
+    } catch (IOException | JacksonException e) {
       log.warn("Loopio project creation failed", e);
       return Optional.empty();
     }

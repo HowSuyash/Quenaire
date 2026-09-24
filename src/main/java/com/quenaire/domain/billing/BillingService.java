@@ -13,8 +13,6 @@
  */
 package com.quenaire.domain.billing;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quenaire.config.StripeConfig;
 import com.quenaire.domain.tenant.Tenant;
 import com.quenaire.domain.tenant.TenantRepository;
@@ -29,6 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class BillingService {
