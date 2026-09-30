@@ -68,6 +68,11 @@ app:
     timeout-seconds: 300
     max-tokens: 256
 
+  # Tests run against the local model: they assert on real retrieval, and a
+  # hosted provider would bill for every run.
+  embeddings:
+    provider: ollama
+
   rag:
     chunk-size: 200
     chunk-overlap: 40

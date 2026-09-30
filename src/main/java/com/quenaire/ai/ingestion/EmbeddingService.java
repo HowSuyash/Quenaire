@@ -13,69 +13,43 @@
  */
 package com.quenaire.ai.ingestion;
 
+import com.quenaire.ai.embedding.EmbeddingClient;
 import java.util.List;
-import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
+/**
+ * Embedding, as the rest of the application sees it.
+ *
+ * <p>Delegates to whichever {@link EmbeddingClient} is configured. This class used to hold the
+ * Ollama HTTP call itself, so every deployment needed a model server running beside it whether it
+ * wanted one or not -- and each chunk cost its own round trip, because there was nowhere for a
+ * provider to say it could take a batch.
+ */
 @Service
 public class EmbeddingService {
 
-  private final RestClient restClient;
-  private final String embeddingModel;
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final EmbeddingClient client;
 
-  public EmbeddingService(
-      @Value("${app.ollama.base-url:http://localhost:11434}") String baseUrl,
-      @Value("${app.ollama.embedding-model:nomic-embed-text}") String embeddingModel) {
-    this.restClient =
-        RestClient.builder()
-            .baseUrl(baseUrl)
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .build();
-    this.embeddingModel = embeddingModel;
+  public EmbeddingService(EmbeddingClient client) {
+    this.client = client;
   }
 
-  /** The configured embedding model. Recorded alongside stored vectors. */
+  /** The model that produced these vectors. Recorded alongside them. */
   public String modelId() {
-    return embeddingModel;
+    return client.modelId();
   }
 
   public float[] embed(String text) {
-    try {
-      Map<String, Object> request =
-          Map.of(
-              "model", embeddingModel,
-              "prompt", text);
-
-      JsonNode response =
-          restClient.post().uri("/api/embeddings").body(request).retrieve().body(JsonNode.class);
-
-      JsonNode embeddingNode = response.get("embedding");
-      if (embeddingNode == null || !embeddingNode.isArray()) {
-        throw new EmbeddingException("Invalid embedding response: " + response);
-      }
-
-      float[] result = new float[embeddingNode.size()];
-      for (int i = 0; i < embeddingNode.size(); i++) {
-        result[i] = embeddingNode.get(i).floatValue();
-      }
-      return result;
-    } catch (Exception e) {
-      throw new EmbeddingException("Failed to generate embedding", e);
-    }
+    return client.embed(text);
   }
 
+  /** One request where the provider supports it, rather than one per text. */
   public List<float[]> embedBatch(List<String> texts) {
-    return texts.stream().map(this::embed).toList();
+    return client.embedBatch(texts);
   }
 
-  public static class EmbeddingException extends RuntimeException {
+  /** Kept so existing callers still compile; the client defines it now. */
+  public static class EmbeddingException extends EmbeddingClient.EmbeddingException {
     public EmbeddingException(String message, Throwable cause) {
       super(message, cause);
     }

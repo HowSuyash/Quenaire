@@ -113,9 +113,20 @@ app:
     max-tokens: ${ANTHROPIC_MAX_TOKENS:2048}
     timeout-seconds: 120
 
-  # Embeddings stay local either way: nomic-embed-text is small enough to run
-  # beside the application, and embedding is the cheap half of the pipeline
-  # (~90ms against ~20s for generation).
+  # Embeddings. Hosted by default now: running Ollama solely to embed costs about
+  # a gigabyte of resident memory and re-downloads the model on every cold start,
+  # for the cheap half of the pipeline -- ~90ms to embed a chunk against ~20s to
+  # generate an answer. Self-hosted deployments set this to `ollama` and keep the
+  # text inside their own network.
+  embeddings:
+    provider: ${EMBEDDINGS_PROVIDER:openai}
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      # Returns 1536 natively; the client asks for 768 to match the schema's
+      # vector(768). Changing this to a model that cannot truncate needs a
+      # migration, not just a new value here.
+      model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+
   ollama:
     base-url: ${OLLAMA_BASE_URL:http://ollama:11434}
     embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
