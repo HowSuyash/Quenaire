@@ -18,6 +18,11 @@ jobs:
   test:
     name: Unit & Integration Tests
     runs-on: ubuntu-latest
+    # Postgres only. The test profile switches off the Kafka listeners and excludes Redis
+    # autoconfiguration, so no test talks to either. Kafka, Zookeeper and Redis containers
+    # used to be listed here too, and they stopped the job before a single test ran:
+    # Actions starts services in declaration order, Kafka came up before Zookeeper existed,
+    # gave up resolving it after 40s and was marked unhealthy, failing "Initialize containers".
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -28,39 +33,6 @@ jobs:
         ports: [5432:5432]
         options: >-
           --health-cmd "pg_isready -U quenaire -d quenaire_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:7-alpine
-        ports: [6379:6379]
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      kafka:
-        image: confluentinc/cp-kafka:7.6.0
-        env:
-          KAFKA_BROKER_ID: 1
-          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-          KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-          KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-        ports: [9092:9092]
-        options: >-
-          --health-cmd "/etc/confluent/docker/healthcheck"
-          --health-interval 10s
-          --health-timeout 10s
-          --health-retries 5
-      zookeeper:
-        image: confluentinc/cp-zookeeper:7.6.0
-        env:
-          ZOOKEEPER_CLIENT_PORT: 2181
-        options: >-
-          --health-cmd "nc -z localhost 2181"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
