@@ -95,6 +95,20 @@ export interface Questionnaire {
   updatedAt: string;
 }
 
+/** A single-use upload link (api/rest/agent/IntakeController.IntakeLinkResponse). */
+export interface IntakeLink {
+  id: string;
+  vendorName: string;
+  vendorEmail: string;
+  state: 'PENDING' | 'SUBMITTED' | 'EXPIRED';
+  expiresAt: string;
+  createdAt: string;
+  questionnaireId?: string | null;
+  submittedAt?: string | null;
+  submitterName?: string | null;
+  submitterEmail?: string | null;
+}
+
 export interface Question {
   id: string;
   questionnaireId: string;

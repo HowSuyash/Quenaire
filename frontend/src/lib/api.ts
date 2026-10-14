@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getToken, removeToken } from './auth';
 import {
-  Questionnaire, Question, Answer, Document, Tenant, User, PaginatedResponse,
+  Questionnaire, Question, Answer, Document, Tenant, User, PaginatedResponse, IntakeLink,
   ReviewQueueItem, ReviewQueueResponse, ReviewQueueStats, SMEProfile, PresenceUser,
 } from '@/types/api';
 import { AnalyticsDashboard } from '@/types/analytics';
@@ -633,6 +633,28 @@ class ApiClient {
       requireMockData('processQuestionnaire', error);
       return { success: true, message: 'Processing started with Ollama AI model.' };
     }
+  }
+
+  // Intake links. No fixture fallback: a link that only exists in the browser
+  // would be sent to someone and fail for them.
+
+  /** Creates a link. The URL holds the token and is only ever returned here. */
+  async createIntakeLink(input: {
+    vendorName: string;
+    vendorEmail: string;
+    expiresInDays?: number;
+  }): Promise<{ link: IntakeLink; intakeUrl: string }> {
+    const { data } = await this.client.post('/vanta/intake/links', input);
+    return { link: data.link, intakeUrl: data.intakeUrl };
+  }
+
+  async getIntakeLinks(): Promise<IntakeLink[]> {
+    const { data } = await this.client.get<IntakeLink[]>('/vanta/intake/links');
+    return data;
+  }
+
+  async revokeIntakeLink(id: string): Promise<void> {
+    await this.client.delete(`/vanta/intake/links/${id}`);
   }
 
   /**
