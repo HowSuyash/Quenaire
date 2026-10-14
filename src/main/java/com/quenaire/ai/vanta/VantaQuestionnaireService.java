@@ -228,31 +228,9 @@ public class VantaQuestionnaireService {
     int highConfidence = 0;
 
     for (VantaQuestion question : questions) {
-      // Run AI reasoning
-      VantaReasoningEngine.ReasoningResult result = reasoningEngine.reason(question, documents);
-
-      // Update question with AI answer
-      question.setAiAnswer(result.getAnswer());
-      question.setConfidenceScore(result.getConfidenceScore());
-      question.setSelectedOption(result.getSelectedOption());
-
-      // Store citations
-      if (result.getCitations() != null) {
-        List<UUID> citationIds =
-            result.getCitations().stream().map(Citation::getId).collect(Collectors.toList());
-        question.setCitationIds(citationIds);
-      }
-
-      // Determine initial status based on confidence
-      if (result.getConfidenceLevel() == ConfidenceLevel.HIGH) {
-        question.setStatus(VantaQuestion.QuestionStatus.AI_DRAFTED);
+      if (draftAnswer(question, documents)) {
         highConfidence++;
-      } else if (result.getConfidenceLevel() == ConfidenceLevel.MEDIUM) {
-        question.setStatus(VantaQuestion.QuestionStatus.NEEDS_REVIEW);
-      } else {
-        question.setStatus(VantaQuestion.QuestionStatus.NEEDS_REVIEW);
       }
-
       questionRepository.save(question);
       processed++;
     }
@@ -270,6 +248,47 @@ public class VantaQuestionnaireService {
         highConfidence,
         processed - highConfidence);
     return questionnaire;
+  }
+
+  /**
+   * Drafts a fresh answer for one question, against the tenant's whole document library.
+   *
+   * <p>The review screen offers this per question. Nothing served it for these questions -- the
+   * only generate endpoint belongs to the older question model -- so the button could only fail.
+   */
+  @Transactional
+  public VantaQuestion generateAnswer(UUID questionId) {
+    VantaQuestion question =
+        getQuestion(questionId)
+            .orElseThrow(() -> new IllegalArgumentException("Question not found"));
+    draftAnswer(question, List.of());
+    return questionRepository.save(question);
+  }
+
+  /**
+   * Runs the reasoning engine for a question and records what it produced. An empty document list
+   * means the tenant's whole library.
+   *
+   * @return whether the draft came back with high confidence
+   */
+  private boolean draftAnswer(VantaQuestion question, List<Document> documents) {
+    VantaReasoningEngine.ReasoningResult result = reasoningEngine.reason(question, documents);
+
+    question.setAiAnswer(result.getAnswer());
+    question.setConfidenceScore(result.getConfidenceScore());
+    question.setSelectedOption(result.getSelectedOption());
+
+    if (result.getCitations() != null) {
+      List<UUID> citationIds =
+          result.getCitations().stream().map(Citation::getId).collect(Collectors.toList());
+      question.setCitationIds(citationIds);
+    }
+
+    // Only a high-confidence draft skips straight to "drafted"; everything else wants a person.
+    boolean high = result.getConfidenceLevel() == ConfidenceLevel.HIGH;
+    question.setStatus(
+        high ? VantaQuestion.QuestionStatus.AI_DRAFTED : VantaQuestion.QuestionStatus.NEEDS_REVIEW);
+    return high;
   }
 
   @Transactional
