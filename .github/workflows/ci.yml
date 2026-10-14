@@ -166,6 +166,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      # dependency-check cannot read build.gradle.kts; it finds Java dependencies by looking at
+      # jars. Without this step there were none in the checkout, so the "security scan" covered
+      # only the frontend lockfile and never saw a single library the backend ships.
+      - name: Build application jar
+        run: ./gradlew bootJar --no-daemon
+
       - name: Run OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
         id: depcheck
@@ -180,19 +186,26 @@ jobs:
           path: '.'
           format: 'HTML'
           out: 'reports'
+          # Dev dependencies (ESLint, the Tailwind build) are not in the standalone runtime
+          # image, so a finding in them is not a finding in the product.
           args: >
             --failOnCVSS 7
             --suppression suppression.xml
             --enableExperimental
             --enableRetired
+            --nodeAuditSkipDevDependencies
 
+      # always(): the report is most needed exactly when the scan fails, and it was only
+      # uploaded when it passed.
       - name: Upload Dependency Check Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Dependency Check Report
           path: reports/
 
       - name: Run SpotBugs
+        if: always()
         run: ./gradlew spotbugsMain --no-daemon
 
       - name: Upload SpotBugs Report

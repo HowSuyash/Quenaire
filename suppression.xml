@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<suppressions>
-    <!-- Suppress known false positives or acceptable risks -->
+<!--
+  The namespace is required. Without it dependency-check rejects the whole file
+  ("Cannot find the declaration of element 'suppressions'") and applies none of it.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <suppress>
-        <notes>False positive - used for testing only</notes>
+        <notes>
+            H2 backs the `local` profile only; production runs Postgres. It does ship in the
+            jar, so this rests on the H2 console staying disabled -- no profile enables it.
+        </notes>
         <packageUrl regex="true">pkg:maven/com.h2database/h2@.*</packageUrl>
         <cpe>cpe:2.3:a:h2database:h2:*:*:*:*:*:*:*:*</cpe>
     </suppress>
     <suppress>
-        <notes>Test dependency only</notes>
+        <notes>Test dependency only; not in the application jar.</notes>
         <packageUrl regex="true">pkg:maven/org.testcontainers/.*</packageUrl>
+        <cvssBelow>11</cvssBelow>
     </suppress>
 </suppressions>
