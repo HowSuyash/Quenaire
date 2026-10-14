@@ -33,10 +33,11 @@ import org.hibernate.type.SqlTypes;
 public class Invoice extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "tenant_id", nullable = false)
+  @JoinColumn(name = "tenant_id", nullable = false, insertable = false, updatable = false)
   private Tenant tenant;
 
-  @Column(name = "tenant_id", insertable = false, updatable = false)
+  // This field writes tenant_id; the association above only reads it, so setTenantId persists.
+  @Column(name = "tenant_id", nullable = false)
   private UUID tenantId;
 
   @Column(name = "stripe_invoice_id", unique = true)
@@ -95,6 +96,7 @@ public class Invoice extends BaseEntity {
 
   public void setTenant(Tenant tenant) {
     this.tenant = tenant;
+    this.tenantId = tenant != null ? tenant.getId() : null;
   }
 
   public UUID getTenantId() {
