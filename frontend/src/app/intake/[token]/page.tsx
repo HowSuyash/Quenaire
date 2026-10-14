@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QuenaireMark } from '@/components/brand/QuenaireMark';
 import { useParams } from 'next/navigation';
-import { Upload, FileText, AlertCircle, Loader2, Shield, X } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle2, Loader2, Shield, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -11,23 +11,19 @@ import { Badge } from '@/components/ui/Badge';
 
 interface IntakeStatus {
   valid: boolean;
-  token: string;
   expiresAt: string;
+  // Who the link was sent to, and whose workspace an upload reaches.
   vendorName: string;
-  questionnaireId?: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  recipientName: string;
+  status: 'PENDING' | 'COMPLETED' | 'EXPIRED' | 'FAILED';
   progress: number;
   currentStage: string;
   error?: string;
 }
 
-const VALID_MIME_TYPES = [
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-excel',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-];
+// The questionnaire parser reads Excel workbooks only. This page used to offer
+// PDF and Word too, which the server could never have processed.
+const XLSX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -55,36 +51,41 @@ export default function IntakePage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [receivedCount, setReceivedCount] = useState<number | null>(null);
 
   const checkTokenStatus = useCallback(async () => {
+    const invalid = (error: string): IntakeStatus => ({
+      valid: false,
+      expiresAt: '',
+      vendorName: '',
+      recipientName: '',
+      status: 'FAILED',
+      progress: 0,
+      currentStage: 'Invalid or expired link',
+      error,
+    });
+
     try {
-      const response = await fetch(`/api/vanta/intake/links/${token}/status`);
-      if (!response.ok) throw new Error('invalid');
-      const data = await response.json();
+      const response = await fetch(`/api/vanta/intake/links/${encodeURIComponent(token)}/status`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus(invalid(data.error || 'This intake link is invalid or has expired.'));
+        return;
+      }
       setStatus({
         valid: data.valid !== false,
-        token: data.token ?? token,
         expiresAt: data.expiresAt ?? '',
         vendorName: data.vendorName ?? '',
-        questionnaireId: data.questionnaireId,
+        recipientName: data.recipientName ?? '',
         status: data.status || 'PENDING',
         progress: data.progress ?? 0,
-        currentStage: data.currentStage || 'Waiting for submission',
+        currentStage: data.currentStage || 'Waiting for your questionnaire',
         error: data.error,
       });
+      // The link was sent to a named company; save the person typing it again.
+      if (data.vendorName) setVendorName((current) => current || data.vendorName);
     } catch {
-      setStatus({
-        valid: false,
-        token,
-        expiresAt: '',
-        vendorName: '',
-        status: 'FAILED',
-        progress: 0,
-        currentStage: 'Invalid or expired link',
-        error: 'This intake link is invalid or has expired.',
-      });
+      setStatus(invalid('This intake link is invalid or has expired.'));
     } finally {
       setLoading(false);
     }
@@ -94,42 +95,11 @@ export default function IntakePage() {
     checkTokenStatus();
   }, [checkTokenStatus]);
 
-  // Clean up any in-flight poll when the component unmounts.
-  useEffect(() => () => {
-    if (pollRef.current) clearInterval(pollRef.current);
-  }, []);
-
-  const pollForStatus = useCallback((questionnaireId: string) => {
-    if (pollRef.current) clearInterval(pollRef.current);
-
-    pollRef.current = setInterval(async () => {
-      try {
-        const response = await fetch(
-          `/api/vanta/agent/questionnaires/${questionnaireId}/orchestration/status`
-        );
-        if (!response.ok) return;
-
-        const data = await response.json();
-        setStatus((prev) => (prev ? {
-          ...prev,
-          status: data.status ?? prev.status,
-          progress: data.progress ?? prev.progress,
-          currentStage: data.currentStage ?? prev.currentStage,
-        } : prev));
-
-        if (data.status === 'COMPLETED' || data.status === 'FAILED') {
-          if (pollRef.current) clearInterval(pollRef.current);
-          pollRef.current = null;
-        }
-      } catch (error) {
-        console.error('Polling failed:', error);
-      }
-    }, 5000);
-  }, []);
-
   const validateFile = (file: File): boolean => {
-    if (!VALID_MIME_TYPES.includes(file.type)) {
-      setFormError('Invalid file type. Please upload an Excel, PDF, or Word file.');
+    // Some browsers report no MIME type for a workbook, so the extension decides too.
+    const isXlsx = file.type === XLSX_MIME_TYPE || file.name.toLowerCase().endsWith('.xlsx');
+    if (!isXlsx) {
+      setFormError('Please upload the questionnaire as an Excel workbook (.xlsx).');
       return false;
     }
     if (file.size > MAX_FILE_BYTES) {
@@ -197,33 +167,32 @@ export default function IntakePage() {
       formData.append('vendorEmail', vendorEmail);
       if (portalUrl.trim()) formData.append('portalUrl', portalUrl);
 
-      const response = await fetch(`/api/vanta/intake/submit/${token}`, {
+      const response = await fetch(`/api/vanta/intake/submit/${encodeURIComponent(token)}`, {
         method: 'POST',
         body: formData,
       });
 
-      const data = await response.json();
+      // A refusal comes back as JSON with a message meant for this page; anything
+      // else (a proxy error, an oversized upload) may not be JSON at all.
+      const data = await response.json().catch(() => ({}));
       setUploadProgress(100);
 
-      if (!data.success) {
+      if (!response.ok || !data.success) {
         setFormError(data.error || 'Upload failed. Please try again.');
         return;
       }
 
+      setReceivedCount(typeof data.totalQuestions === 'number' ? data.totalQuestions : null);
       setStatus((prev) => (prev ? {
         ...prev,
-        status: 'PROCESSING',
-        progress: 10,
-        currentStage: 'Questionnaire received, processing started',
-        questionnaireId: data.questionnaireId,
+        status: 'COMPLETED',
+        progress: 100,
+        currentStage: 'Questionnaire received',
       } : prev));
 
       setSelectedFile(null);
-      setVendorName('');
       setVendorEmail('');
       setPortalUrl('');
-
-      if (data.questionnaireId) pollForStatus(data.questionnaireId);
     } catch (error) {
       console.error('Upload failed:', error);
       setFormError('Upload failed. Please try again.');
@@ -278,7 +247,11 @@ export default function IntakePage() {
           </div>
           <QuenaireMark className="mx-auto mb-3 h-12 w-12" />
           <h1 className="text-3xl font-bold text-gray-900">Quenaire</h1>
-          <p className="text-gray-500 mt-1">Security Questionnaire Intake Portal</p>
+          <p className="text-gray-500 mt-1">
+            {status.recipientName
+              ? `Send your security questionnaire to ${status.recipientName}`
+              : 'Security Questionnaire Intake Portal'}
+          </p>
         </div>
 
         <Card>
@@ -286,7 +259,11 @@ export default function IntakePage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-xl">{status.vendorName || 'Vendor Intake'}</CardTitle>
-                <CardDescription>Security Questionnaire Intake</CardDescription>
+                <CardDescription>
+                  {status.recipientName
+                    ? `Security questionnaire for ${status.recipientName}`
+                    : 'Security Questionnaire Intake'}
+                </CardDescription>
               </div>
               <Badge className={statusBadgeClass(status.status)}>{status.status}</Badge>
             </div>
@@ -309,8 +286,8 @@ export default function IntakePage() {
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-gray-500">Vendor</p>
-                  <p className="font-medium">{status.vendorName || '—'}</p>
+                  <p className="text-gray-500">Sent to</p>
+                  <p className="font-medium">{status.recipientName || '—'}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Link Expires</p>
@@ -318,13 +295,20 @@ export default function IntakePage() {
                     {status.expiresAt ? new Date(status.expiresAt).toLocaleDateString() : '—'}
                   </p>
                 </div>
-                {status.questionnaireId && (
-                  <div className="col-span-2">
-                    <p className="text-gray-500">Questionnaire ID</p>
-                    <p className="font-medium font-mono text-xs">{status.questionnaireId}</p>
-                  </div>
-                )}
               </div>
+
+              {status.status === 'COMPLETED' && (
+                <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                  <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
+                  <p>
+                    {receivedCount !== null
+                      ? `Received — we found ${receivedCount} question${receivedCount === 1 ? '' : 's'}. `
+                      : 'Your questionnaire has been received. '}
+                    {status.recipientName || 'The team'} will be in touch with the completed
+                    answers. This link has now been used and can be closed.
+                  </p>
+                </div>
+              )}
 
               {status.error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -340,7 +324,7 @@ export default function IntakePage() {
             <CardHeader>
               <CardTitle>Upload Questionnaire</CardTitle>
               <CardDescription>
-                Upload your security questionnaire (Excel, PDF, or Word). Maximum file size: 50MB.
+                Upload your security questionnaire as an Excel workbook (.xlsx). Maximum file size: 50MB.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -386,7 +370,7 @@ export default function IntakePage() {
                     type="file"
                     id="questionnaire-file"
                     className="hidden"
-                    accept=".xlsx,.xls,.pdf,.doc,.docx"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     onChange={handleFileSelect}
                     disabled={uploading}
                   />
@@ -405,7 +389,7 @@ export default function IntakePage() {
                           Drag &amp; drop your questionnaire here, or click to browse
                         </p>
                         <p className="text-sm text-gray-500">
-                          Supports .xlsx, .xls, .pdf, .doc, .docx (max 50MB)
+                          Excel workbook (.xlsx), up to 50MB
                         </p>
                       </>
                     )}
@@ -463,20 +447,6 @@ export default function IntakePage() {
                     </>
                   )}
                 </Button>
-
-                {status.questionnaireId && status.status === 'PROCESSING' && (
-                  <div className="text-center text-sm text-gray-500">
-                    <p>Processing in background — you can close this page and check back later.</p>
-                    <p className="mt-1">
-                      <a
-                        href={`/dashboard/questionnaires/${status.questionnaireId}`}
-                        className="text-primary-600 hover:underline"
-                      >
-                        View in Dashboard →
-                      </a>
-                    </p>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -487,11 +457,14 @@ export default function IntakePage() {
             <div className="flex items-start gap-3">
               <Shield className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
               <div>
-                <h3 className="font-medium text-blue-900 mb-1">Secure &amp; Private</h3>
+                <h3 className="font-medium text-blue-900 mb-1">Private to this link</h3>
+                {/* Only what this page can promise. It used to say the data "never leaves
+                    your infrastructure" -- the reader is not the one hosting it -- and that
+                    no external AI provider is used, which depends on how the recipient has
+                    deployed Quenaire. */}
                 <p className="text-sm text-blue-700">
-                  Your questionnaire data never leaves your infrastructure. Quenaire processes
-                  everything within your VPC using local LLMs via Ollama. No data is sent to
-                  external AI providers.
+                  Your file goes only to {status.recipientName || 'the team that sent you this link'}.
+                  The link works once and stops working when it expires.
                 </p>
               </div>
             </div>
