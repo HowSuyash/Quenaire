@@ -176,6 +176,17 @@ public class VantaQuestionnaireController {
         .orElse(ResponseEntity.notFound().build());
   }
 
+  /** Drafts a new answer for one question from the tenant's documents. */
+  @PostMapping("/questions/{questionId}/generate")
+  public ResponseEntity<Map<String, Object>> generateAnswer(@PathVariable UUID questionId) {
+    try {
+      VantaQuestion question = questionnaireService.generateAnswer(questionId);
+      return ResponseEntity.ok(Map.of("success", true, "question", QuestionResponse.of(question)));
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.notFound().build();
+    }
+  }
+
   @PostMapping("/questions/{questionId}/approve")
   public ResponseEntity<Map<String, Object>> approveQuestion(
       @PathVariable UUID questionId, @RequestBody Map<String, Object> request) {
@@ -184,7 +195,7 @@ public class VantaQuestionnaireController {
     VantaQuestion question =
         questionnaireService.approveQuestion(questionId, TenantContext.getCurrentUserId(), notes);
 
-    return ResponseEntity.ok(Map.of("success", true, "question", question));
+    return ResponseEntity.ok(Map.of("success", true, "question", QuestionResponse.of(question)));
   }
 
   @PostMapping("/questions/{questionId}/reject")
@@ -195,7 +206,7 @@ public class VantaQuestionnaireController {
     VantaQuestion question =
         questionnaireService.rejectQuestion(questionId, TenantContext.getCurrentUserId(), reason);
 
-    return ResponseEntity.ok(Map.of("success", true, "question", question));
+    return ResponseEntity.ok(Map.of("success", true, "question", QuestionResponse.of(question)));
   }
 
   @PostMapping("/questions/{questionId}/delegate")
@@ -209,7 +220,7 @@ public class VantaQuestionnaireController {
         questionnaireService.delegateQuestion(
             questionId, TenantContext.getCurrentUserId(), assignedToId, notes);
 
-    return ResponseEntity.ok(Map.of("success", true, "question", question));
+    return ResponseEntity.ok(Map.of("success", true, "question", QuestionResponse.of(question)));
   }
 
   @PostMapping("/questions/{questionId}/answer")
@@ -223,7 +234,7 @@ public class VantaQuestionnaireController {
         questionnaireService.updateAnswer(
             questionId, TenantContext.getCurrentUserId(), answer, notes);
 
-    return ResponseEntity.ok(Map.of("success", true, "question", question));
+    return ResponseEntity.ok(Map.of("success", true, "question", QuestionResponse.of(question)));
   }
 
   @PostMapping("/questions/{questionId}/select-option")
@@ -235,7 +246,7 @@ public class VantaQuestionnaireController {
     VantaQuestion question =
         questionnaireService.selectOption(questionId, TenantContext.getCurrentUserId(), option);
 
-    return ResponseEntity.ok(Map.of("success", true, "question", question));
+    return ResponseEntity.ok(Map.of("success", true, "question", QuestionResponse.of(question)));
   }
 
   @GetMapping("/{id}/export/original")
