@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
@@ -94,6 +96,9 @@ public class VantaSpreadsheetParserService {
 
     // Detect column mappings
     ColumnMapping mapping = detectColumnMapping(headerRow);
+    if (mapping.getQuestionTextCol() < 0) {
+      mapping.setQuestionTextCol(guessQuestionTextColumn(sheet, headerRowIndex, mapping));
+    }
 
     // Parse data rows
     for (int rowIdx = headerRowIndex + 1; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
@@ -138,6 +143,15 @@ public class VantaSpreadsheetParserService {
     return false;
   }
 
+  /**
+   * Which column holds what, decided from the header row.
+   *
+   * <p>Headers are compared word by word and the most specific rule is tried first. This used to
+   * be substring matching with the question-number rule first, which put the column most
+   * questionnaires call simply "Question" into the number slot -- leaving no text column, so every
+   * row was skipped and the upload produced zero questions. The same substring test found "id"
+   * inside "Evidence", "Guidance" and "Valid values". The first column to claim a role keeps it.
+   */
   private ColumnMapping detectColumnMapping(Row headerRow) {
     ColumnMapping mapping = new ColumnMapping();
 
@@ -145,79 +159,62 @@ public class VantaSpreadsheetParserService {
       Cell cell = headerRow.getCell(colIdx);
       if (cell == null) continue;
 
-      String header = getCellStringValue(cell).trim();
-      String lowerHeader = header.toLowerCase();
+      String raw = getCellStringValue(cell);
+      if (raw == null || raw.isBlank()) continue;
 
-      // Question Number / ID
-      if (matchesAny(
-          lowerHeader, "question", "q#", "q num", "q id", "number", "id", "req id", "control id")) {
-        mapping.setQuestionNumberCol(colIdx);
-      }
-      // Category / Section
-      else if (matchesAny(
-          lowerHeader, "category", "section", "domain", "control", "area", "topic", "group")) {
-        mapping.setCategoryCol(colIdx);
-      }
-      // Sub-category
-      else if (matchesAny(
-          lowerHeader,
-          "sub category",
-          "subcategory",
-          "sub-category",
-          "sub section",
-          "subsection")) {
-        mapping.setSubCategoryCol(colIdx);
-      }
-      // Question Text
-      else if (matchesAny(
-          lowerHeader,
-          "question",
-          "query",
-          "requirement",
-          "requirement text",
-          "description",
-          "control text",
-          "question text")) {
-        mapping.setQuestionTextCol(colIdx);
-      }
-      // Answer
-      else if (matchesAny(
-          lowerHeader,
-          "answer",
-          "response",
-          "reply",
-          "your answer",
-          "vendor answer",
-          "response text")) {
-        mapping.setAnswerCol(colIdx);
-      }
-      // Notes / Comments
-      else if (matchesAny(
-          lowerHeader,
+      String header = normalizeHeader(raw);
+      Set<String> words = new HashSet<>(Arrays.asList(header.split(" ")));
+
+      if (header.contains("sub category")
+          || header.contains("subcategory")
+          || header.contains("sub section")
+          || header.contains("subsection")
+          || header.contains("sub domain")) {
+        if (mapping.getSubCategoryCol() < 0) mapping.setSubCategoryCol(colIdx);
+      } else if (hasAny(words, "options", "choices")
+          || header.contains("valid values")
+          || header.contains("valid responses")
+          || header.contains("allowed values")
+          || header.contains("possible answers")) {
+        if (mapping.getOptionsCol() < 0) mapping.setOptionsCol(colIdx);
+      } else if (header.equals("type")
+          || header.equals("format")
+          || header.equals("qtype")
+          || header.endsWith(" type")) {
+        if (mapping.getTypeCol() < 0) mapping.setTypeCol(colIdx);
+      } else if (isNumberHeader(header, words)) {
+        if (mapping.getQuestionNumberCol() < 0) mapping.setQuestionNumberCol(colIdx);
+      } else if (hasAny(words, "answer", "answers", "response", "responses", "reply")) {
+        if (mapping.getAnswerCol() < 0) mapping.setAnswerCol(colIdx);
+      } else if (hasAny(
+          words,
           "notes",
+          "note",
           "comments",
+          "comment",
           "remarks",
           "evidence",
           "reference",
+          "references",
           "guidance",
-          "comment")) {
-        mapping.setNotesCol(colIdx);
-      }
-      // Question Type (if specified)
-      else if (matchesAny(lowerHeader, "type", "question type", "qtype", "format")) {
-        mapping.setTypeCol(colIdx);
-      }
-      // Options (for dropdown)
-      else if (matchesAny(lowerHeader, "options", "choices", "valid values", "valid responses")) {
-        mapping.setOptionsCol(colIdx);
-      }
-      // Required flag
-      else if (matchesAny(lowerHeader, "required", "mandatory", "obligatory")) {
-        mapping.setRequiredCol(colIdx);
-      }
-      // Attachment flag
-      else if (matchesAny(lowerHeader, "attachment", "attach", "file", "upload", "document")) {
-        mapping.setAttachmentCol(colIdx);
+          "explanation",
+          "justification")) {
+        if (mapping.getNotesCol() < 0) mapping.setNotesCol(colIdx);
+      } else if (hasAny(
+          words, "attachment", "attachments", "attach", "file", "upload", "document")) {
+        // Ahead of "required": "Attachment required" says whether to attach, not whether
+        // the question must be answered.
+        if (mapping.getAttachmentCol() < 0) mapping.setAttachmentCol(colIdx);
+      } else if (hasAny(words, "required", "mandatory", "obligatory")) {
+        if (mapping.getRequiredCol() < 0) mapping.setRequiredCol(colIdx);
+      } else if (hasAny(
+              words, "question", "questions", "query", "requirement", "requirements", "description")
+          || header.contains("control text")
+          || header.contains("control statement")) {
+        if (mapping.getQuestionTextCol() < 0) mapping.setQuestionTextCol(colIdx);
+      } else if (hasAny(
+          words, "category", "section", "domain", "control", "area", "topic", "group", "family")) {
+        if (mapping.getCategoryCol() < 0) mapping.setCategoryCol(colIdx);
       }
     }
 
@@ -225,11 +222,77 @@ public class VantaSpreadsheetParserService {
     return mapping;
   }
 
-  private boolean matchesAny(String header, String... keywords) {
-    for (String kw : keywords) {
-      if (header.contains(kw.toLowerCase())) return true;
+  /** Lower case, punctuation other than '#' turned to spaces, whitespace collapsed. */
+  private static String normalizeHeader(String header) {
+    return header
+        .toLowerCase(Locale.ROOT)
+        .replace("#", " # ")
+        .replaceAll("[^a-z0-9#]+", " ")
+        .trim()
+        .replaceAll("\\s+", " ");
+  }
+
+  /**
+   * "#", "No.", "ID", "Ref", "Question ID", "Control No", "Item number", "Q#" -- an identifier
+   * column. Judged on whole words: "Evidence provided" contains "id" but is not an id.
+   */
+  private static boolean isNumberHeader(String header, Set<String> words) {
+    if (words.contains("#")) return true;
+    if (Set.of("id", "no", "num", "number", "ref", "item", "q", "s no", "sr no").contains(header)) {
+      return true;
+    }
+    String last = header.substring(header.lastIndexOf(' ') + 1);
+    return header.contains(" ") && Set.of("id", "no", "num", "number", "ref").contains(last);
+  }
+
+  private static boolean hasAny(Set<String> words, String... candidates) {
+    for (String candidate : candidates) {
+      if (words.contains(candidate)) return true;
     }
     return false;
+  }
+
+  /**
+   * The column holding the questions when no header said so: the one whose cells carry the most
+   * text. A questionnaire whose question column is headed something unrecognised, or not headed at
+   * all, would otherwise yield nothing.
+   */
+  private int guessQuestionTextColumn(Sheet sheet, int headerRowIndex, ColumnMapping mapping) {
+    Set<Integer> taken =
+        Stream.of(
+            mapping.getQuestionNumberCol(),
+            mapping.getCategoryCol(),
+            mapping.getSubCategoryCol(),
+            mapping.getAnswerCol(),
+            mapping.getNotesCol(),
+            mapping.getTypeCol(),
+            mapping.getOptionsCol(),
+            mapping.getRequiredCol(),
+            mapping.getAttachmentCol())
+            .filter(col -> col >= 0)
+            .collect(Collectors.toSet());
+
+    Map<Integer, Integer> totalLength = new HashMap<>();
+    int lastSampled = Math.min(sheet.getLastRowNum(), headerRowIndex + 25);
+    for (int rowIdx = headerRowIndex + 1; rowIdx <= lastSampled; rowIdx++) {
+      Row row = sheet.getRow(rowIdx);
+      if (row == null) continue;
+      for (Cell cell : row) {
+        if (taken.contains(cell.getColumnIndex()) || cell.getCellType() != CellType.STRING) {
+          continue;
+        }
+        totalLength.merge(
+            cell.getColumnIndex(), cell.getStringCellValue().trim().length(), Integer::sum);
+      }
+    }
+
+    // A column of short codes or yes/no values is not a question column, however long it is.
+    int sampledRows = Math.max(1, lastSampled - headerRowIndex);
+    return totalLength.entrySet().stream()
+        .filter(entry -> entry.getValue() / sampledRows >= 15)
+        .max(Map.Entry.comparingByValue())
+        .map(Map.Entry::getKey)
+        .orElse(-1);
   }
 
   private ParsedQuestion parseQuestionRow(
@@ -303,8 +366,9 @@ public class VantaSpreadsheetParserService {
       }
     }
 
-    // Check for dropdown validation
-    Cell answerCell = row.getCell(mapping.getAnswerCol());
+    // Check for dropdown validation. Many questionnaires have no answer column at all -- the
+    // answers are what we produce -- and POI throws on a negative index rather than returning null.
+    Cell answerCell = mapping.getAnswerCol() >= 0 ? row.getCell(mapping.getAnswerCol()) : null;
     if (answerCell != null && hasDataValidation(answerCell)) {
       return inferTypeFromValidation(answerCell);
     }
