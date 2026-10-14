@@ -54,7 +54,14 @@ dependencies {
     // Database
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2")
-    implementation("org.flywaydb:flyway-core")
+    // The starter, not flyway-core alone. Boot 4 moved Flyway's autoconfiguration out of
+    // spring-boot-autoconfigure into spring-boot-flyway, so with only flyway-core on the
+    // classpath nothing runs the migrations at startup: an already-migrated database hides
+    // it, and a fresh one stays empty until ddl-auto=validate refuses to start.
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
+    // Flyway 10+ ships each database as its own module; without this one it reports
+    // "Unsupported Database: PostgreSQL" rather than migrating.
+    runtimeOnly("org.flywaydb:flyway-database-postgresql")
 
     // Vector Search (pgvector)
     implementation("com.pgvector:pgvector:0.1.6")
