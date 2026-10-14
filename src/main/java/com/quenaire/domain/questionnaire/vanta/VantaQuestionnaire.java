@@ -119,7 +119,9 @@ public class VantaQuestionnaire extends BaseEntity {
     LOOPIO,
     CYBERGRX,
     GOOGLE_FORMS,
-    TYPEFORM
+    TYPEFORM,
+    // Sent in by an outside party through a single-use intake link (V12).
+    INTAKE_LINK
   }
 
   public enum QuestionnaireStatus {

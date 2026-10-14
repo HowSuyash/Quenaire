@@ -69,6 +69,26 @@ public class VantaQuestionnaireService {
   @Transactional
   public VantaQuestionnaire uploadAndParse(MultipartFile file, String title, String description)
       throws IOException {
+    return uploadAndParse(
+        file,
+        title,
+        description,
+        TenantContext.requireCurrentTenant().getId(),
+        VantaQuestionnaire.SourceType.UPLOAD_EXCEL);
+  }
+
+  /**
+   * Parses and stores a questionnaire for a tenant named explicitly rather than taken from the
+   * request -- for a file that arrives without a signed-in user, such as through an intake link.
+   */
+  @Transactional
+  public VantaQuestionnaire uploadAndParse(
+      MultipartFile file,
+      String title,
+      String description,
+      UUID tenantId,
+      VantaQuestionnaire.SourceType sourceType)
+      throws IOException {
     log.info("Uploading and parsing questionnaire: {}", file.getOriginalFilename());
 
     // Parse the spreadsheet
@@ -78,11 +98,11 @@ public class VantaQuestionnaireService {
     VantaQuestionnaire questionnaire = new VantaQuestionnaire();
     questionnaire.setTitle(title != null ? title : parsed.getFileName());
     questionnaire.setDescription(description);
-    questionnaire.setSourceType(VantaQuestionnaire.SourceType.UPLOAD_EXCEL);
+    questionnaire.setSourceType(sourceType);
     questionnaire.setFileName(file.getOriginalFilename());
     questionnaire.setOriginalFileBytes(file.getBytes());
     questionnaire.setStatus(VantaQuestionnaire.QuestionnaireStatus.PARSING);
-    questionnaire.setTenantId(TenantContext.getCurrentTenantId());
+    questionnaire.setTenantId(tenantId);
 
     questionnaire = questionnaireRepository.save(questionnaire);
 
@@ -110,7 +130,7 @@ public class VantaQuestionnaireService {
         question.setOriginalRowIndex(pq.getOriginalRowIndex());
         question.setOriginalHeaderRowIndex(pq.getOriginalHeaderRowIndex());
         question.setMetadataJson(serializeCoordinates(pq));
-        question.setTenantId(TenantContext.getCurrentTenantId());
+        question.setTenantId(tenantId);
 
         questions.add(question);
         globalRowIndex++;
