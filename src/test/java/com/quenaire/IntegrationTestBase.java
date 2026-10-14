@@ -101,8 +101,11 @@ public abstract class IntegrationTestBase {
 
     // The driver needs the same type-inference relaxation as production: entity
     // enums bind as varchar, and Postgres will not implicitly cast those into a
-    // native enum column.
-    url = container.getJdbcUrl() + "?stringtype=unspecified";
+    // native enum column. The container's URL already carries a query string
+    // (?loggerLevel=OFF), so a second '?' made the driver read the whole tail as
+    // the logger level and every enum insert failed.
+    String jdbcUrl = container.getJdbcUrl();
+    url = jdbcUrl + (jdbcUrl.contains("?") ? "&" : "?") + "stringtype=unspecified";
     username = container.getUsername();
     password = container.getPassword();
   }
