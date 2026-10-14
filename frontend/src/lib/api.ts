@@ -85,6 +85,114 @@ function requireMockData(operation: string, cause?: unknown): void {
 // Set NEXT_PUBLIC_API_URL only to point a local `next dev` at a remote backend.
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
+/** Calls that run the language model: seconds per question, not the default 5s. */
+const GENERATION_TIMEOUT_MS = 0;
+/** Upload and parse a workbook; large questionnaires take longer than 5s to send. */
+const UPLOAD_TIMEOUT_MS = 120_000;
+
+/**
+ * A question as the backend sends it (api/rest/vanta/dto/QuestionResponse.java).
+ *
+ * The review screen was written against an older model with separate Question
+ * and Answer resources under /api/questions -- routes that do not exist, so
+ * outside fixture mode the screen could load nothing. The answer lives on the
+ * question in this model; the adapters below translate rather than rewriting
+ * every component.
+ */
+interface VantaQuestionResponse {
+  id: string;
+  questionnaireId: string;
+  questionNumber?: string | null;
+  text: string;
+  originalText?: string | null;
+  category?: string | null;
+  subCategory?: string | null;
+  section?: string | null;
+  questionType: Question['questionType'];
+  optionsJson?: string | null;
+  isRequired?: boolean | null;
+  status: Question['status'];
+  confidenceScore?: number | null;
+  aiAnswer?: string | null;
+  humanAnswer?: string | null;
+  finalAnswer?: string | null;
+  reviewNotes?: string | null;
+  reviewedById?: string | null;
+  reviewedAt?: string | null;
+  rowIndex?: number | null;
+  tenantId: string;
+}
+
+function parseOptions(json?: string | null): unknown[] {
+  try {
+    const parsed = JSON.parse(json ?? '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function toQuestion(r: VantaQuestionResponse): Question {
+  return {
+    id: r.id,
+    questionnaireId: r.questionnaireId,
+    text: r.text,
+    originalText: r.originalText ?? undefined,
+    questionType: r.questionType,
+    optionsJson: parseOptions(r.optionsJson),
+    // Most workbooks name a category rather than a section; either groups the screen.
+    section: r.section ?? r.category ?? undefined,
+    subsection: r.subCategory ?? undefined,
+    questionNumber: r.questionNumber ?? '',
+    rowIndex: r.rowIndex ?? undefined,
+    status: r.status,
+    confidenceScore: r.confidenceScore ?? undefined,
+    isRequired: !!r.isRequired,
+    tagsJson: [],
+    metadataJson: {},
+    tenantId: r.tenantId,
+    createdAt: '',
+    updatedAt: '',
+  };
+}
+
+const ANSWER_STATUS: Record<Question['status'], Answer['status']> = {
+  PENDING: 'DRAFT',
+  SKIPPED: 'DRAFT',
+  DELEGATED: 'DRAFT',
+  AI_DRAFTED: 'AI_GENERATED',
+  NEEDS_REVIEW: 'AI_GENERATED',
+  HUMAN_EDITED: 'HUMAN_EDITED',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+};
+
+/** The question's answer, or null when nothing has been drafted or written yet. */
+function toAnswer(r: VantaQuestionResponse): Answer | null {
+  const content = r.finalAnswer ?? r.humanAnswer ?? r.aiAnswer;
+  if (!content) return null;
+  return {
+    id: r.id,
+    questionId: r.id,
+    content,
+    aiGeneratedContent: r.aiAnswer ?? undefined,
+    // Only citation ids come back; the screen renders details, so it shows none
+    // rather than invented ones.
+    citationsJson: [],
+    // The backend scores 0-100.
+    confidenceScore: r.confidenceScore != null ? r.confidenceScore / 100 : undefined,
+    status: ANSWER_STATUS[r.status] ?? 'DRAFT',
+    reviewNotes: r.reviewNotes ?? undefined,
+    reviewedAt: r.reviewedAt ?? undefined,
+    reviewedById: r.reviewedById ?? undefined,
+    version: 1,
+    metadataJson: {},
+    tenantId: r.tenantId,
+    createdAt: '',
+    updatedAt: '',
+  };
+}
+
 const MOCK_QUESTIONNAIRES: Questionnaire[] = [
   {
     id: 'q-101',
@@ -456,8 +564,8 @@ class ApiClient {
 
   async getQuestionnaire(id: string): Promise<Questionnaire> {
     try {
-      const { data } = await this.client.get(`/questionnaires/${id}`);
-      return data;
+      const { data } = await this.client.get(`/vanta/questionnaires/${id}`);
+      return { metadataJson: {}, ...data };
     } catch (error) {
       requireMockData('getQuestionnaire', error);
       return MOCK_QUESTIONNAIRES.find(q => q.id === id) || MOCK_QUESTIONNAIRES[0];
@@ -468,8 +576,11 @@ class ApiClient {
     try {
       const { data: response } = await this.client.post('/vanta/questionnaires', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: UPLOAD_TIMEOUT_MS,
       });
-      return response;
+      // The upload endpoint answers { success, questionnaireId, title, totalQuestions,
+      // status }, not a questionnaire; fetch the real one.
+      return this.getQuestionnaire(response.questionnaireId);
     } catch (error) {
       requireMockData('createQuestionnaire', error);
       const newQ: Questionnaire = {
@@ -513,7 +624,10 @@ class ApiClient {
 
   async processQuestionnaire(id: string) {
     try {
-      const { data } = await this.client.post(`/questionnaires/${id}/process`);
+      // Synchronous on the server: it returns when every question has a draft.
+      const { data } = await this.client.post(`/vanta/questionnaires/${id}/process`, {}, {
+        timeout: GENERATION_TIMEOUT_MS,
+      });
       return data;
     } catch (error) {
       requireMockData('processQuestionnaire', error);
@@ -565,8 +679,20 @@ class ApiClient {
   // Questions
   async getQuestions(questionnaireId: string, params?: { page?: number; size?: number; status?: string }): Promise<PaginatedResponse<Question>> {
     try {
-      const { data } = await this.client.get(`/questionnaires/${questionnaireId}/questions`, { params });
-      return data;
+      // The endpoint returns every question, unpaged; filter and wrap here.
+      const { data } = await this.client.get<VantaQuestionResponse[]>(
+        `/vanta/questionnaires/${questionnaireId}/questions`
+      );
+      const all = data.map(toQuestion).filter((q) => !params?.status || q.status === params.status);
+      return {
+        content: all,
+        page: 0,
+        size: all.length,
+        totalElements: all.length,
+        totalPages: 1,
+        first: true,
+        last: true,
+      };
     } catch (error) {
       requireMockData('getQuestions', error);
       return {
@@ -583,8 +709,10 @@ class ApiClient {
 
   async getQuestion(id: string): Promise<Question> {
     try {
-      const { data } = await this.client.get(`/questions/${id}`);
-      return data;
+      const { data } = await this.client.get<VantaQuestionResponse>(
+        `/vanta/questionnaires/questions/${id}`
+      );
+      return toQuestion(data);
     } catch (error) {
       requireMockData('getQuestion', error);
       return MOCK_QUESTIONS.find(q => q.id === id) || MOCK_QUESTIONS[0];
@@ -604,18 +732,49 @@ class ApiClient {
   // Answers
   async getAnswer(questionId: string): Promise<Answer | null> {
     try {
-      const { data } = await this.client.get(`/questions/${questionId}/answer`);
-      return data;
+      const { data } = await this.client.get<VantaQuestionResponse>(
+        `/vanta/questionnaires/questions/${questionId}`
+      );
+      return toAnswer(data);
     } catch (error) {
       requireMockData('getAnswer', error);
       return MOCK_ANSWERS[questionId] || null;
     }
   }
 
-  async generateAnswer(questionId: string): Promise<Answer> {
+  /**
+   * Every answer in a questionnaire, keyed by question id, from one request. The
+   * review screen used to fetch them one question at a time -- ninety sequential
+   * round trips for a typical questionnaire.
+   */
+  async getAnswers(questionnaireId: string): Promise<Map<string, Answer>> {
     try {
-      const { data } = await this.client.post(`/questions/${questionId}/answer/generate`);
-      return data;
+      const { data } = await this.client.get<VantaQuestionResponse[]>(
+        `/vanta/questionnaires/${questionnaireId}/questions`
+      );
+      const answers = new Map<string, Answer>();
+      for (const question of data) {
+        const answer = toAnswer(question);
+        if (answer) answers.set(question.id, answer);
+      }
+      return answers;
+    } catch (error) {
+      requireMockData('getAnswers', error);
+      return new Map(Object.entries(MOCK_ANSWERS));
+    }
+  }
+
+  async generateAnswer(questionId: string): Promise<Answer> {
+    // Only the request sits in the try: a reply with no answer in it is not an
+    // unreachable API, and must not be reported as one.
+    let question: VantaQuestionResponse;
+    try {
+      const { data } = await this.client.post(
+        `/vanta/questionnaires/questions/${questionId}/generate`,
+        {},
+        { timeout: GENERATION_TIMEOUT_MS }
+      );
+      question = data.question;
     } catch (error) {
       requireMockData('generateAnswer', error);
       return MOCK_ANSWERS[questionId] || {
@@ -640,12 +799,20 @@ class ApiClient {
         updatedAt: new Date().toISOString(),
       };
     }
+    const answer = toAnswer(question);
+    if (!answer) throw new Error('No answer could be drafted for this question.');
+    return answer;
   }
 
   async updateAnswer(questionId: string, data: { content: string; status?: string }): Promise<Answer> {
+    let question: VantaQuestionResponse;
     try {
-      const { data: response } = await this.client.put(`/questions/${questionId}/answer`, data);
-      return response;
+      // The server records the edit as HUMAN_EDITED itself; status is not sent.
+      const { data: response } = await this.client.post(
+        `/vanta/questionnaires/questions/${questionId}/answer`,
+        { answer: data.content }
+      );
+      question = response.question;
     } catch (error) {
       requireMockData('updateAnswer', error);
       const current = MOCK_ANSWERS[questionId] || {
@@ -666,11 +833,18 @@ class ApiClient {
       MOCK_ANSWERS[questionId] = current;
       return current;
     }
+    const answer = toAnswer(question);
+    if (!answer) throw new Error('The edited answer was not saved.');
+    return answer;
   }
 
   async approveAnswer(questionId: string) {
     try {
-      const { data } = await this.client.post(`/questions/${questionId}/answer/approve`);
+      // The endpoint requires a body, even an empty one.
+      const { data } = await this.client.post(
+        `/vanta/questionnaires/questions/${questionId}/approve`,
+        {}
+      );
       return data;
     } catch (error) {
       requireMockData('approveAnswer', error);
@@ -683,7 +857,10 @@ class ApiClient {
 
   async rejectAnswer(questionId: string, reason: string) {
     try {
-      const { data } = await this.client.post(`/questions/${questionId}/answer/reject`, { reviewNotes: reason });
+      const { data } = await this.client.post(
+        `/vanta/questionnaires/questions/${questionId}/reject`,
+        { reason }
+      );
       return data;
     } catch (error) {
       requireMockData('rejectAnswer', error);

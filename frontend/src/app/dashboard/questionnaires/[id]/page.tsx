@@ -44,23 +44,20 @@ export default function QuestionnaireDetailPage() {
     enabled: !!questionnaireId,
   });
 
-  const { data: answersData } = useQuery({
+  // One request for the whole questionnaire. This used to await one request per
+  // question in turn, and swallowed every failure as "no answer yet".
+  const { data: answersData } = useQuery<Map<string, Answer>>({
     queryKey: ['answers', questionnaireId],
-    queryFn: async () => {
-      const questions = questionsData?.content || [];
-      const answersMap = new Map<string, Answer>();
-      for (const q of questions) {
-        try {
-          const answer = await api.getAnswer(q.id);
-          if (answer) answersMap.set(q.id, answer);
-        } catch {
-          // Answer doesn't exist yet
-        }
-      }
-      return answersMap;
-    },
+    queryFn: () => api.getAnswers(questionnaireId),
     enabled: !!questionsData?.content?.length,
   });
+
+  // An answer's status is also the question's status in this model, so both lists
+  // go stale together after any review action.
+  const refreshReview = () => {
+    queryClient.invalidateQueries({ queryKey: ['answers', questionnaireId] });
+    queryClient.invalidateQueries({ queryKey: ['questions', questionnaireId] });
+  };
 
   const generateAnswerMutation = useMutation({
     mutationFn: (questionId: string) => api.generateAnswer(questionId),
@@ -68,8 +65,7 @@ export default function QuestionnaireDetailPage() {
       setGeneratingQuestions(prev => ({ ...prev, [questionId]: true }));
     },
     onSuccess: (_, questionId) => {
-      queryClient.invalidateQueries({ queryKey: ['answer', questionId] });
-      queryClient.invalidateQueries({ queryKey: ['answers', questionnaireId] });
+      refreshReview();
       setGeneratingQuestions(prev => ({ ...prev, [questionId]: false }));
     },
     onError: (_, questionId) => {
@@ -84,8 +80,7 @@ export default function QuestionnaireDetailPage() {
       setUpdatingQuestions(prev => ({ ...prev, [questionId]: true }));
     },
     onSuccess: (_, { questionId }) => {
-      queryClient.invalidateQueries({ queryKey: ['answer', questionId] });
-      queryClient.invalidateQueries({ queryKey: ['answers', questionnaireId] });
+      refreshReview();
       setUpdatingQuestions(prev => ({ ...prev, [questionId]: false }));
     },
     onError: (_, { questionId }) => {
@@ -96,7 +91,7 @@ export default function QuestionnaireDetailPage() {
   const approveAnswerMutation = useMutation({
     mutationFn: (questionId: string) => api.approveAnswer(questionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['answers', questionnaireId] });
+      refreshReview();
       queryClient.invalidateQueries({ queryKey: ['questionnaire', questionnaireId] });
     },
   });
@@ -105,7 +100,7 @@ export default function QuestionnaireDetailPage() {
     mutationFn: ({ questionId, reason }: { questionId: string; reason: string }) =>
       api.rejectAnswer(questionId, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['answers', questionnaireId] });
+      refreshReview();
       queryClient.invalidateQueries({ queryKey: ['questionnaire', questionnaireId] });
     },
   });
@@ -114,7 +109,7 @@ export default function QuestionnaireDetailPage() {
     mutationFn: () => api.processQuestionnaire(questionnaireId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['questionnaire', questionnaireId] });
-      queryClient.invalidateQueries({ queryKey: ['questions', questionnaireId] });
+      refreshReview();
     },
   });
 

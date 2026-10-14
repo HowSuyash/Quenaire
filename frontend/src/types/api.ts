@@ -70,7 +70,14 @@ export interface Questionnaire {
   id: string;
   title: string;
   description?: string;
-  sourceType: 'UPLOAD_EXCEL' | 'UPLOAD_PDF' | 'UPLOAD_WORD' | 'PORTAL_LINK' | 'API_IMPORT' | 'EMAIL_FORWARD';
+  sourceType:
+    | 'UPLOAD_EXCEL'
+    | 'UPLOAD_PDF'
+    | 'UPLOAD_WORD'
+    | 'PORTAL_LINK'
+    | 'API_IMPORT'
+    | 'EMAIL_FORWARD'
+    | 'INTAKE_LINK';
   sourceUrl?: string;
   sourceId?: string;
   fileName?: string;
@@ -99,7 +106,16 @@ export interface Question {
   subsection?: string;
   questionNumber: string;
   rowIndex?: number;
-  status: 'PENDING' | 'AI_DRAFTED' | 'NEEDS_REVIEW' | 'APPROVED' | 'REJECTED' | 'SKIPPED';
+  // Mirrors VantaQuestion.QuestionStatus.
+  status:
+    | 'PENDING'
+    | 'AI_DRAFTED'
+    | 'NEEDS_REVIEW'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'SKIPPED'
+    | 'DELEGATED'
+    | 'HUMAN_EDITED';
   confidenceScore?: number;
   isRequired: boolean;
   tagsJson: string[];
